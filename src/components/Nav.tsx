@@ -36,7 +36,7 @@ export default function Nav({ name }: { name: string }) {
       }`}
     >
       <nav className="section-container flex items-center justify-between py-4">
-        <a href="#top" className="font-semibold tracking-tight">
+        <a href="#" className="font-semibold tracking-tight">
           {nameParts.map((part, i) => (
             <span key={part}>
               {i > 0 && <span className="text-accent-ink">.</span>}

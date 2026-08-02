@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   motion,
   useMotionValue,
@@ -18,6 +18,30 @@ interface HeroSceneProps {
   yearsOfExperience: number;
   avatarUrl: string;
   avatarHdUrl: string;
+}
+
+/**
+ * A media query as reactive state. `useSyncExternalStore` rather than an
+ * effect, so it survives the input device changing (plugging a mouse into a
+ * tablet) and hydrates cleanly: the server has no matchMedia, so it reports
+ * no match and the pointer-only layers simply don't render until the client
+ * says otherwise.
+ */
+function useMediaQuery(query: string) {
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const list = window.matchMedia(query);
+      list.addEventListener("change", onChange);
+      return () => list.removeEventListener("change", onChange);
+    },
+    [query],
+  );
+
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(query).matches,
+    () => false,
+  );
 }
 
 /**
@@ -87,9 +111,10 @@ export default function HeroScene({
 
   const reduced = useReducedMotion();
   // Pointer position over the hero, normalised to -1…1 from the centre. Only
-  // ever set for a mouse or pen — a touch shouldn't leave the spotlight
+  // tracked for a mouse or pen — a touch shouldn't leave the spotlight
   // stranded wherever the last tap landed.
-  const [tracksPointer, setTracksPointer] = useState(false);
+  const finePointer = useMediaQuery("(pointer: fine)");
+  const tracksPointer = finePointer && !reduced;
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
   const glide = { stiffness: 110, damping: 20, mass: 0.6 };
@@ -104,11 +129,6 @@ export default function HeroScene({
   const auroraY = useTransform(smoothY, (value) => value * -10);
   const tiltY = useTransform(smoothX, (value) => value * 11);
   const tiltX = useTransform(smoothY, (value) => value * -11);
-
-  useEffect(() => {
-    if (reduced) return;
-    setTracksPointer(window.matchMedia("(pointer: fine)").matches);
-  }, [reduced]);
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!tracksPointer || event.pointerType === "touch") return;
@@ -241,7 +261,7 @@ export default function HeroScene({
             <motion.div
               ref={portraitRef}
               style={tracksPointer ? { rotateX: tiltX, rotateY: tiltY } : undefined}
-              drag={reduced ? false : true}
+              drag={!reduced}
               dragElastic={0.16}
               dragSnapToOrigin
               dragTransition={{ bounceStiffness: 260, bounceDamping: 24 }}
