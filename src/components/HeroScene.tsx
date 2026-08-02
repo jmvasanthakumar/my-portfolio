@@ -12,80 +12,128 @@ interface HeroSceneProps {
   avatarUrl: string;
 }
 
-interface Puff {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  r: number;
-  growth: number;
-  age: number;
-  life: number;
-  rot: number;
-  rotV: number;
-  peak: number; // max opacity this puff reaches mid-life
-  sprite: number;
+const VERTEX_SHADER = `
+attribute vec2 aPosition;
+void main() {
+  gl_Position = vec4(aPosition, 0.0, 1.0);
 }
-
-const MAX_PUFFS = 190;
-// How far the pointer disturbs the smoke, in CSS pixels.
-const POINTER_RADIUS = 170;
-
-// Mirrors the --accent / --accent-2 fill tokens in globals.css, plus the cool
-// sky note already used in the hero's background wash. These are graphics,
-// not text, so the vivid fills are the right variants here.
-const PALETTE: [number, number, number][] = [
-  [245, 158, 11], // amber — --accent
-  [251, 113, 133], // coral — --accent-2
-  [56, 189, 248], // sky
-];
-const SPRITE_SIZE = 256;
-const VARIANTS_PER_COLOR = 3;
+`;
 
 /**
- * One soft, irregular smoke blob, pre-rendered once to an offscreen canvas.
- * Built from a handful of overlapping radial gradients rather than a single
- * one — a lone gradient reads as fog, the clustered version has the lumpy
- * edge that makes it read as smoke. Pre-rendering keeps the per-frame cost
- * to a plain drawImage.
- */
-function makeSprite([cr, cg, cb]: [number, number, number]) {
-  const canvas = document.createElement("canvas");
-  canvas.width = SPRITE_SIZE;
-  canvas.height = SPRITE_SIZE;
-  const sctx = canvas.getContext("2d");
-  if (!sctx) return canvas;
-
-  for (let i = 0; i < 7; i++) {
-    const x = SPRITE_SIZE / 2 + (Math.random() - 0.5) * SPRITE_SIZE * 0.36;
-    const y = SPRITE_SIZE / 2 + (Math.random() - 0.5) * SPRITE_SIZE * 0.36;
-    const radius = SPRITE_SIZE * (0.16 + Math.random() * 0.17);
-    const grad = sctx.createRadialGradient(x, y, 0, x, y, radius);
-    grad.addColorStop(0, `rgba(${cr}, ${cg}, ${cb}, 0.42)`);
-    grad.addColorStop(0.55, `rgba(${cr}, ${cg}, ${cb}, 0.16)`);
-    grad.addColorStop(1, `rgba(${cr}, ${cg}, ${cb}, 0)`);
-    sctx.fillStyle = grad;
-    sctx.beginPath();
-    sctx.arc(x, y, radius, 0, Math.PI * 2);
-    sctx.fill();
-  }
-
-  return canvas;
-}
-
-/** Sideways drift, so a column of smoke sways instead of rising straight up. */
-function wind(y: number, t: number) {
-  return Math.sin(y * 0.0055 + t * 0.6) * 0.22 + Math.sin(y * 0.013 - t * 0.9) * 0.12;
-}
-
-/**
- * Procedural, code-driven hero background: slow plumes of coloured smoke
- * rising and curling across the viewport. Entirely canvas/JS, no video or
- * image assets.
+ * Animated mesh gradient, the technique behind Stripe-style hero backgrounds:
+ * fractal brownian motion (stacked octaves of value noise) fed through two
+ * rounds of domain warping — fbm(p + fbm(p + fbm(p))) — so the field folds
+ * against itself into slow, marbled, never-repeating colour flow.
  *
- * Animation runs on its own rAF loop, independent of scroll, so idle motion
- * stays smooth. Scroll only feeds cheap derived values (zoom, fade, a little
- * extra updraft).
+ * Value noise is used rather than the usual simplex implementation: at this
+ * blur level the two are indistinguishable, and it's a fraction of the ALU
+ * cost per pixel.
+ */
+const FRAGMENT_SHADER = `
+precision highp float;
+
+uniform vec2 uResolution;
+uniform float uTime;
+uniform vec2 uPointer;
+uniform float uProgress;
+
+// Palette mirrors the CSS vars in globals.css: --background, --accent (amber),
+// --accent-2 (coral), plus the sky note used in the hero's background wash.
+const vec3 BASE = vec3(0.992, 0.988, 0.976);
+const vec3 AMBER = vec3(0.961, 0.620, 0.043);
+const vec3 CORAL = vec3(0.984, 0.443, 0.522);
+const vec3 SKY = vec3(0.220, 0.741, 0.973);
+
+float hash(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(
+    mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+    mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+    u.y
+  );
+}
+
+float fbm(vec2 p) {
+  float value = 0.0;
+  float amplitude = 0.5;
+  // Rotating between octaves hides the axis-aligned grid of the value noise.
+  mat2 rot = mat2(0.80, 0.60, -0.60, 0.80);
+  for (int i = 0; i < 4; i++) {
+    value += amplitude * noise(p);
+    p = rot * p * 2.02;
+    amplitude *= 0.5;
+  }
+  return value;
+}
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / uResolution.xy;
+  float aspect = uResolution.x / uResolution.y;
+  vec2 p = vec2(uv.x * aspect, uv.y) * 1.6;
+
+  float t = uTime * 0.045;
+
+  // Two levels of domain warping. Each level offsets the sample point by the
+  // previous level's output, which is what turns smooth noise into swirling,
+  // liquid-looking bands instead of clouds.
+  vec2 q = vec2(fbm(p + vec2(0.0, t)), fbm(p + vec2(5.2, 1.3 - t * 0.8)));
+  vec2 r = vec2(
+    fbm(p + 2.4 * q + vec2(1.7 + t * 0.7, 9.2)),
+    fbm(p + 2.4 * q + vec2(8.3, 2.8 - t * 0.5))
+  );
+  float f = fbm(p + 2.6 * r);
+
+  vec3 color = BASE;
+  color = mix(color, AMBER, smoothstep(0.28, 0.95, f) * 0.80);
+  color = mix(color, CORAL, clamp(length(q) - 0.25, 0.0, 1.0) * 0.85);
+  color = mix(color, SKY, clamp(r.x - 0.35, 0.0, 1.0) * 0.70);
+
+  // A warm light that trails the cursor, so the surface reacts to the pointer
+  // without anything visibly "following" it.
+  vec2 pointerDelta = (uv - uPointer) * vec2(aspect, 1.0);
+  float glow = exp(-dot(pointerDelta, pointerDelta) * 9.0);
+  color += AMBER * glow * 0.16;
+
+  // Keep the left column close to the page background so the hero copy always
+  // sits on near-flat paper, and let the gradient build toward the right.
+  float reveal = smoothstep(0.02, 0.62, uv.x);
+  // Settle back toward the background as the scroll track runs out.
+  reveal *= 1.0 - uProgress * 0.55;
+  color = mix(BASE, color, reveal);
+
+  // Dither: light, wide gradients band badly on 8-bit displays without it.
+  color += (hash(gl_FragCoord.xy + fract(uTime)) - 0.5) * 0.012;
+
+  gl_FragColor = vec4(color, 1.0);
+}
+`;
+
+function compile(gl: WebGLRenderingContext, type: number, source: string) {
+  const shader = gl.createShader(type);
+  if (!shader) return null;
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    gl.deleteShader(shader);
+    return null;
+  }
+  return shader;
+}
+
+/**
+ * Procedural, code-driven hero background: an animated mesh gradient rendered
+ * by a WebGL fragment shader — no video, no image assets, no 3D library.
+ *
+ * Everything expensive happens on the GPU, one full-screen pass per frame, so
+ * the animation is smooth regardless of what the main thread is doing. If
+ * WebGL is unavailable the canvas simply stays empty and the CSS radial
+ * gradient behind it carries the design.
  */
 export default function HeroScene({
   name,
@@ -96,7 +144,7 @@ export default function HeroScene({
 }: HeroSceneProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const pointerRef = useRef({ x: 0, y: 0, active: false });
+  const pointerRef = useRef({ x: 0.72, y: 0.5 });
   const [reducedMotion, setReducedMotion] = useState(() =>
     typeof window !== "undefined"
       ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -116,8 +164,7 @@ export default function HeroScene({
 
   const contentOpacity = useTransform(smoothProgress, [0, 0.55, 1], [1, 1, 0]);
   const contentY = useTransform(smoothProgress, [0, 1], [0, -60]);
-  const sceneScale = useTransform(smoothProgress, [0, 1], [1, 1.18]);
-  const sceneOpacity = useTransform(smoothProgress, [0, 0.7, 1], [1, 1, 0.15]);
+  const sceneScale = useTransform(smoothProgress, [0, 1], [1, 1.08]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -129,174 +176,107 @@ export default function HeroScene({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
-    const ctx: CanvasRenderingContext2D = context;
 
-    const sprites = PALETTE.flatMap((color) =>
-      Array.from({ length: VARIANTS_PER_COLOR }, () => makeSprite(color))
+    const gl = (canvas.getContext("webgl", {
+      antialias: false,
+      alpha: false,
+      powerPreference: "low-power",
+    }) ||
+      canvas.getContext("experimental-webgl")) as WebGLRenderingContext | null;
+    if (!gl) return; // no WebGL: the CSS gradient behind the canvas stands in
+
+    const vs = compile(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
+    const fs = compile(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
+    const program = gl.createProgram();
+    if (!vs || !fs || !program) return;
+
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+    gl.useProgram(program);
+
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([-1, -1, 3, -1, -1, 3]), // one oversized triangle
+      gl.STATIC_DRAW
     );
+    const aPosition = gl.getAttribLocation(program, "aPosition");
+    gl.enableVertexAttribArray(aPosition);
+    gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
 
-    let width = 0;
-    let height = 0;
-    const puffs: Puff[] = [];
+    const uResolution = gl.getUniformLocation(program, "uResolution");
+    const uTime = gl.getUniformLocation(program, "uTime");
+    const uPointer = gl.getUniformLocation(program, "uPointer");
+    const uProgress = gl.getUniformLocation(program, "uProgress");
 
-    // Two vents: a main plume off toward the avatar column, and a fainter one
-    // low on the left, so the field isn't symmetrical.
-    const vents = () => [
-      { x: width * 0.63, y: height + 60, spread: width * 0.1, weight: 0.72 },
-      { x: width * 0.14, y: height + 90, spread: width * 0.08, weight: 0.28 },
-    ];
-
-    const emit = (seeded: boolean) => {
-      const list = vents();
-      const roll = Math.random();
-      const vent = roll < list[0].weight ? list[0] : list[1];
-
-      const puff: Puff = {
-        x: vent.x + (Math.random() - 0.5) * vent.spread * 2,
-        // Seeded puffs start scattered up the screen so the scene is already
-        // full of smoke on the first frame instead of filling in from below.
-        y: seeded ? Math.random() * height * 1.2 : vent.y,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: -(0.24 + Math.random() * 0.5),
-        r: 34 + Math.random() * 62,
-        growth: 0.14 + Math.random() * 0.22,
-        age: 0,
-        life: 320 + Math.random() * 380,
-        rot: Math.random() * Math.PI * 2,
-        rotV: (Math.random() - 0.5) * 0.0025,
-        peak: 0.1 + Math.random() * 0.13,
-        sprite: Math.floor(Math.random() * sprites.length),
-      };
-      if (seeded) puff.age = Math.random() * puff.life * 0.8;
-      puffs.push(puff);
-    };
+    // The gradient has no hard edges, so rendering below device resolution is
+    // invisible and keeps the fragment cost down on high-DPI screens.
+    const RENDER_SCALE = 0.75;
 
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      width = rect.width;
-      height = rect.height;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, width, height);
-      puffs.length = 0;
-      for (let i = 0; i < MAX_PUFFS; i++) emit(true);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2) * RENDER_SCALE;
+      canvas.width = Math.max(1, Math.round(rect.width * dpr));
+      canvas.height = Math.max(1, Math.round(rect.height * dpr));
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.uniform2f(uResolution, canvas.width, canvas.height);
     };
 
-    const step = (t: number, updraft: number) => {
-      const pointer = pointerRef.current;
-
-      for (let i = puffs.length - 1; i >= 0; i--) {
-        const p = puffs[i];
-
-        p.vx += (wind(p.y, t) - p.vx) * 0.02;
-        p.vy -= 0.0007 * updraft; // buoyancy: smoke accelerates as it rises
-
-        if (pointer.active) {
-          const dx = p.x - pointer.x;
-          const dy = p.y - pointer.y;
-          const dist = Math.hypot(dx, dy);
-          if (dist < POINTER_RADIUS && dist > 0.001) {
-            // Like waving a hand through it: shove the smoke outward and let
-            // it billow a little where it's disturbed.
-            const falloff = (1 - dist / POINTER_RADIUS) ** 2;
-            p.vx += (dx / dist) * falloff * 0.55;
-            p.vy += (dy / dist) * falloff * 0.55;
-            p.r += falloff * 0.6;
-          }
-        }
-
-        p.vx *= 0.995;
-        p.vy *= 0.995;
-        p.x += p.vx;
-        p.y += p.vy;
-        p.r += p.growth;
-        p.rot += p.rotV;
-        p.age++;
-
-        if (p.age > p.life || p.y + p.r < -80) {
-          puffs.splice(i, 1);
-        }
-      }
-
-      while (puffs.length < MAX_PUFFS) emit(false);
-    };
-
-    const paint = () => {
-      ctx.clearRect(0, 0, width, height);
-
-      for (const p of puffs) {
-        const ratio = p.age / p.life;
-        // Ease in and out over the puff's life so nothing pops in or vanishes.
-        const alpha = Math.sin(Math.PI * ratio) * p.peak;
-        if (alpha <= 0.002) continue;
-
-        ctx.globalAlpha = alpha;
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        ctx.drawImage(sprites[p.sprite], -p.r, -p.r, p.r * 2, p.r * 2);
-        ctx.restore();
-      }
-
-      ctx.globalAlpha = 1;
+    // Pointer position is eased toward the cursor rather than snapped, so the
+    // highlight drifts instead of jumping.
+    const target = { ...pointerRef.current };
+    const onPointerMove = (e: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      target.x = (e.clientX - rect.left) / rect.width;
+      target.y = 1 - (e.clientY - rect.top) / rect.height;
     };
 
     resize();
     window.addEventListener("resize", resize);
+    if (!reducedMotion) window.addEventListener("pointermove", onPointerMove);
 
     let frameId = 0;
-    let elapsed = 0;
+    const start = performance.now();
 
-    const tick = () => {
-      elapsed += 0.006;
-      step(elapsed, 1 + smoothProgress.get() * 1.5);
-      paint();
-      frameId = requestAnimationFrame(tick);
+    const render = (time: number) => {
+      const pointer = pointerRef.current;
+      pointer.x += (target.x - pointer.x) * 0.045;
+      pointer.y += (target.y - pointer.y) * 0.045;
+
+      gl.uniform1f(uTime, time);
+      gl.uniform2f(uPointer, pointer.x, pointer.y);
+      gl.uniform1f(uProgress, smoothProgress.get());
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
 
     if (reducedMotion) {
-      // No animation: let the plume develop for a fixed number of steps and
-      // leave the resulting drift as one static composition.
-      for (let i = 0; i < 260; i++) step(i * 0.006, 1);
-      paint();
+      render(12); // one static, fully-formed frame
     } else {
+      const tick = (now: number) => {
+        render((now - start) / 1000);
+        frameId = requestAnimationFrame(tick);
+      };
       frameId = requestAnimationFrame(tick);
     }
 
     return () => {
       window.removeEventListener("resize", resize);
+      window.removeEventListener("pointermove", onPointerMove);
       if (frameId) cancelAnimationFrame(frameId);
+      gl.deleteProgram(program);
+      gl.deleteShader(vs);
+      gl.deleteShader(fs);
+      gl.deleteBuffer(buffer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reducedMotion]);
 
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (reducedMotion) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    pointerRef.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      active: true,
-    };
-  };
-
-  const onPointerLeave = () => {
-    pointerRef.current = { ...pointerRef.current, active: false };
-  };
-
   return (
     <div ref={trackRef} className="relative h-[150vh]">
-      <div
-        onPointerMove={onPointerMove}
-        onPointerLeave={onPointerLeave}
-        className="sticky top-0 flex h-screen items-center overflow-hidden"
-      >
+      <div className="sticky top-0 flex h-screen items-center overflow-hidden">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-20"
@@ -310,16 +290,7 @@ export default function HeroScene({
           ref={canvasRef}
           aria-hidden
           className="absolute inset-0 -z-10 h-full w-full"
-          style={{
-            scale: sceneScale,
-            opacity: sceneOpacity,
-            // Thin the smoke out behind the copy on the left so the text
-            // always stays the most legible thing on screen.
-            maskImage:
-              "linear-gradient(to right, rgba(0,0,0,0.25), rgba(0,0,0,0.95) 55%)",
-            WebkitMaskImage:
-              "linear-gradient(to right, rgba(0,0,0,0.25), rgba(0,0,0,0.95) 55%)",
-          }}
+          style={{ scale: sceneScale }}
         />
 
         <motion.div
