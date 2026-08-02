@@ -106,12 +106,15 @@ export default function HeroScene({
                 className="hero-ring absolute -inset-[3px] rounded-full"
               />
               <div className="glass-card relative h-full w-full overflow-hidden rounded-full">
+                {/* object-[50%_35%] biases the crop upward: the source is a
+                    full portrait, so a plain centre crop sits the face high
+                    in the circle. */}
                 <Image
                   src={avatarUrl}
                   alt={name}
                   fill
                   sizes="(max-width: 640px) 176px, (max-width: 1024px) 224px, 288px"
-                  className="object-cover"
+                  className="object-cover object-[50%_35%]"
                   priority
                 />
               </div>

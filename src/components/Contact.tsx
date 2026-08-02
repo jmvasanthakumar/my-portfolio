@@ -1,5 +1,6 @@
 import { getProfile } from "@/services/portfolioService";
 import Reveal from "./Reveal";
+import { InstagramIcon, LinkedInIcon } from "./icons";
 
 export default async function Contact() {
   const profile = await getProfile();
@@ -17,31 +18,39 @@ export default async function Contact() {
             collaborations. Reach out through any of the channels below.
           </p>
 
-          {/* Full-width stacked pills on phones — comfortable tap targets and
-              no risk of a long email string overflowing its pill. */}
-          <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-4">
+          {/* Email stays a labelled pill — full width on phones, so a long
+              address never overflows. The socials sit beside it as icon
+              buttons, 48px square so they stay comfortable tap targets. */}
+          <div className="mt-8 flex flex-col items-center gap-4 sm:mt-10 sm:flex-row sm:flex-wrap sm:justify-center">
             <a
               href={`mailto:${profile.email}`}
-              className="break-all rounded-full bg-accent px-6 py-3 text-sm font-medium text-accent-contrast transition-transform hover:scale-105"
+              className="w-full break-all rounded-full bg-accent px-6 py-3 text-sm font-medium text-accent-contrast transition-transform hover:scale-105 sm:w-auto"
             >
               {profile.email}
             </a>
-            <a
-              href={profile.linkedin}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full border border-border px-6 py-3 text-sm font-medium transition-colors hover:border-accent hover:text-accent-ink"
-            >
-              LinkedIn
-            </a>
-            <a
-              href={profile.instagram}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full border border-border px-6 py-3 text-sm font-medium transition-colors hover:border-accent hover:text-accent-ink"
-            >
-              Instagram
-            </a>
+
+            <div className="flex items-center gap-3">
+              <a
+                href={profile.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn"
+                title="LinkedIn"
+                className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-accent hover:text-accent-ink"
+              >
+                <LinkedInIcon className="h-5 w-5" />
+              </a>
+              <a
+                href={profile.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                title="Instagram"
+                className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-accent hover:text-accent-ink"
+              >
+                <InstagramIcon className="h-5 w-5" />
+              </a>
+            </div>
           </div>
         </Reveal>
       </div>
