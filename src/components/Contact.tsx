@@ -8,7 +8,7 @@ export default async function Contact() {
     <section id="contact" className="py-24 sm:py-32">
       <div className="section-container text-center">
         <Reveal>
-          <p className="font-mono text-sm text-accent-ink">07. Contact</p>
+          <p className="font-mono text-sm text-accent-ink">06. Contact</p>
           <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
             Let&apos;s talk
           </h2>

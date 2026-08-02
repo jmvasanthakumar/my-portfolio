@@ -12,21 +12,6 @@ export interface Profile {
   resumeUrl: string;
 }
 
-export interface AboutInterest {
-  label: string;
-  emoji: string;
-}
-
-export interface About {
-  headline: string;
-  bio: string[];
-  /** Personal photo — a blob/CDN URL, swappable without touching components. */
-  photoUrl: string;
-  interests: AboutInterest[];
-  values: string[];
-  funFacts: string[];
-}
-
 export interface Experience {
   id: string;
   company: string;

@@ -1,5 +1,4 @@
 import profileData from "@/data/profile.json";
-import aboutData from "@/data/about.json";
 import experienceData from "@/data/experience.json";
 import projectsData from "@/data/projects.json";
 import skillsData from "@/data/skills.json";
@@ -8,7 +7,6 @@ import certificationsData from "@/data/certifications.json";
 import updatesData from "@/data/updates.json";
 import type {
   Profile,
-  About,
   Experience,
   Project,
   Skills,
@@ -28,10 +26,6 @@ import type {
 
 export async function getProfile(): Promise<Profile> {
   return profileData as Profile;
-}
-
-export async function getAbout(): Promise<About> {
-  return aboutData as About;
 }
 
 export async function getExperience(): Promise<Experience[]> {

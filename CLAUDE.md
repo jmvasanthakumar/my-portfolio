@@ -1,15 +1,15 @@
 # Portfolio Site — Working Rules
 
 Next.js 14 (App Router, TypeScript, Tailwind CSS v4, Framer Motion). An immersive
-"all about me" personal site, not just a resume — see `src/data/about.json` and
-the "Latest Updates" section for the non-resume parts.
+personal site, not just a resume — see the "Latest Updates" section for the
+non-resume parts.
 
 ## Architecture rules (do not bypass these)
 
 1. **All content lives in `src/data/*.json`.** Never hardcode copy, links, dates,
    or lists directly in a component. If it's content, it goes in JSON.
 2. **Components never import JSON directly.** They call functions from
-   `src/services/portfolioService.ts` (`getProfile`, `getAbout`, `getExperience`,
+   `src/services/portfolioService.ts` (`getProfile`, `getExperience`,
    `getProjects`, `getSkills`, `getEducation`, `getCertifications`, `getUpdates`).
    This is the single swap point if content ever moves to a real API — only
    that file's function bodies change, not components.
@@ -19,8 +19,8 @@ the "Latest Updates" section for the non-resume parts.
    that swap happens.
 4. **Types live in `src/types/portfolio.ts`** and mirror the JSON shape exactly.
    Update both together when the schema changes.
-5. **Personal photos** (avatar, about photo) are referenced by URL from JSON
-   (`avatarUrl`, `photoUrl`), rendered with `next/image`. Real `blob:` URLs are
+5. **Personal photos** (e.g. the hero avatar) are referenced by URL from JSON
+   (`avatarUrl`), rendered with `next/image`. Real `blob:` URLs are
    browser-session-local and can't be persisted in JSON — use a real hosted URL
    (Azure Blob Storage public URL, CDN, S3, etc.) when swapping out the
    dicebear placeholders. Any new external image host must be added to
@@ -34,59 +34,64 @@ the "Latest Updates" section for the non-resume parts.
 8. **Scroll-in animation** goes through the shared `<Reveal>` client component
    (`src/components/Reveal.tsx`) — don't add ad-hoc `motion.div` usage
    elsewhere; wrap new content in `<Reveal>` for consistency.
-9. **Theme**: dark, developer-focused, forced (not OS-driven) via
-   `color-scheme: dark` in `globals.css`. Accent colors are the CSS vars
-   `--accent` (emerald) and `--accent-2` (indigo) — reuse these, don't
-   introduce new one-off colors.
+9. **Theme**: light, warm, forced (not OS-driven) via `color-scheme: light`
+    in `globals.css`. Accents are the CSS vars `--accent` (amber) and
+    `--accent-2` (coral) for fills, and `--accent-ink` / `--accent-2-ink`
+    for text on the light background — reuse these, don't introduce new
+    one-off colors.
 10. **Section order** (both in `page.tsx` and `Nav.tsx`'s `LINKS`):
-    Hero → Experience → Projects → Skills → Updates → Education → **About** →
-    Contact. About is placed last on purpose — it's the personal/human
-    section (hobbies, values, story), so the site leads with professional
-    credibility and closes on "here's who I actually am" right before
-    Contact. Keep the numbered labels (`01. Journey`, `02. Work`, etc.) in
+    Hero → Experience → Projects → Skills → Updates → Education → Contact.
+    Keep the numbered labels (`01. Journey`, `02. Work`, … `06. Contact`) in
     each component in sync with this order if sections are reordered.
-11. **`about.json` content must stay non-technical.** It's the deliberate
-    counterweight to the resume-driven sections above it — bio, values, and
-    fun facts should read as personal (life, personality, interests outside
-    work), not as a restatement of engineering philosophy or tech stack.
-    Section anchors (`#about`, `#experience`, `#projects`, `#skills`,
-    `#updates`, `#education`, `#contact`) must stay in sync between each
-    component's `id` and `Nav.tsx`'s `LINKS` array.
+11. **Section anchors** (`#experience`, `#projects`, `#skills`, `#updates`,
+    `#education`, `#contact`) must stay in sync between each component's
+    `id` and `Nav.tsx`'s `LINKS` array.
 
 ## Hero: procedural canvas scene (no video/image assets)
 
 `Hero.tsx` always renders `HeroScene.tsx` — a code-driven, canvas-based
-particle/network field (abstract, dark, emerald/indigo), not a video. This
-was a deliberate pivot away from an earlier scroll-scrubbed-video approach:
-video seeking is inherently choppy under fast scroll (browsers can't seek
-frame-accurately without dense keyframing), and generating clutter-free
-footage was also difficult. A canvas animation avoids both problems and adds
-no asset weight.
+animation, never a video. This was a deliberate pivot away from an earlier
+scroll-scrubbed-video approach: video seeking is inherently choppy under fast
+scroll (browsers can't seek frame-accurately without dense keyframing), and
+generating clutter-free footage was also difficult. A canvas animation avoids
+both problems and adds no asset weight.
 
-`HeroScene.tsx`:
+`HeroScene.tsx` draws **rising smoke**: ~190 soft puffs emitted from two
+vents below the viewport, drifting up through a sine "wind", expanding and
+fading, tinted amber / coral / sky. Specifics worth keeping:
 
-- Wraps a 250vh scroll track (`h-[250vh]`) with a `sticky top-0 h-screen`
-  inner container, so content stays pinned to the viewport for the length of
-  the track (same pinning approach as before).
-- Runs its own `requestAnimationFrame` loop, independent of scroll, drawing
-  ~70 drifting particles with faint connecting lines when close together
-  (a "constellation" look). This is what makes the idle motion smooth — it's
-  never blocked on scroll events or video decode.
-- Scroll only drives a cheap CSS `scale` transform on the canvas (via
-  Framer Motion's `useScroll` + `useSpring`, damped so it eases rather than
-  jumps) for a subtle zoom-in as the user scrolls — GPU-accelerated, so it
-  stays smooth even though the particle animation itself doesn't listen to
-  scroll at all.
-- Respects `prefers-reduced-motion`: draws a single static frame instead of
-  animating when the user has that OS setting on.
-- Content (name/title/tagline/avatar) fades out near the end of the track via
-  the same damped scroll value, so the scene is the sole focus right before
-  the next section takes over.
+- Puffs are pre-rendered sprites (`makeSprite`), each a cluster of seven
+  offset radial gradients on a 256px offscreen canvas. The clustering is
+  what makes it read as smoke — a single radial gradient reads as fog.
+  Nine sprites (3 colors × 3 variants) are built once at mount, so the
+  per-frame cost is just `drawImage`.
+- Scroll track is a short `h-[150vh]` with a `sticky top-0 h-screen` inner
+  container — the hero pins for only ~half a viewport of scrolling. It was
+  deliberately shortened from 250vh; don't lengthen it again.
+- Its own `requestAnimationFrame` loop drives the motion, independent of
+  scroll, so idle animation is smooth and never blocked on scroll events.
+- The canvas is cleared each frame and stays transparent, so the radial
+  background wash behind it shows through the smoke.
+- On resize the field is re-seeded with puffs already scattered up the
+  screen (`emit(true)`), so the hero opens full of smoke rather than
+  filling in from the bottom.
+- The pointer disturbs it: within `POINTER_RADIUS` puffs are shoved outward
+  and billow, like waving a hand through smoke. This is the interactive
+  hook of the scene — keep it if the visuals change.
+- Scroll only feeds cheap derived values (Framer Motion `useScroll` +
+  damped `useSpring`): canvas `scale`/`opacity` and a stronger updraft.
+  GPU-accelerated, and the animation itself never reads scroll.
+- Respects `prefers-reduced-motion`: advances the simulation a fixed number
+  of steps and paints one static composition instead of animating.
+- A CSS `mask-image` gradient thins the smoke on the left so the copy stays
+  the most legible thing on screen.
+- Content (name/title/tagline/avatar) fades out over the track via the same
+  damped scroll value, before the next section takes over.
 
-If a similar effect is needed elsewhere, extract the canvas particle logic
-into its own hook/component rather than duplicating `HeroScene`. Don't
-reintroduce a `<video>`-based approach for scroll-driven hero content unless
-the keyframe-density problem is solved first (re-encoding with `-g 1` or
+If a similar effect is needed elsewhere, extract the canvas logic into its
+own hook/component rather than duplicating `HeroScene`. Don't reintroduce a
+`<video>`-based approach for scroll-driven hero content unless the
+keyframe-density problem is solved first (re-encoding with `-g 1` or
 switching to an image-sequence-on-canvas technique).
 
 ## When adding a new section

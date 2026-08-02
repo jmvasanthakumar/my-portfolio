@@ -12,167 +12,80 @@ interface HeroSceneProps {
   avatarUrl: string;
 }
 
-interface Block {
-  gi: number;
-  gj: number;
-  k: number;
-  tx: number; // target screen x, relative to scene center
-  ty: number; // target screen y, relative to scene center
-  sx: number; // start offset x (where it flies in from)
-  sy: number; // start offset y
-  progressStart: number; // 0-1, fraction of scroll progress where this block starts assembling
-  progressEnd: number; // 0-1, fraction of scroll progress where it's fully settled
-  mix: number; // 0-1 color mix between accent/accent2
+interface Puff {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  r: number;
+  growth: number;
+  age: number;
+  life: number;
+  rot: number;
+  rotV: number;
+  peak: number; // max opacity this puff reaches mid-life
+  sprite: number;
 }
 
-const LEVELS = 4; // pyramid of levels: 4x4, 3x3, 2x2, 1x1
-const TILE_W = 46;
-const TILE_H = 23;
-const LEVEL_H = 32;
-// The structure finishes assembling by this fraction of the scroll track,
-// leaving the remainder as a "hold" before content fades into the next
-// section (see contentOpacity below).
-const BUILD_FRACTION = 0.65;
+const MAX_PUFFS = 190;
+// How far the pointer disturbs the smoke, in CSS pixels.
+const POINTER_RADIUS = 170;
 
-// Mirrors the --accent / --accent-2 fill tokens in globals.css. These are the
-// vivid fills, not the ink variants — the blocks are graphics, not text.
-const ACCENT: [number, number, number] = [245, 158, 11]; // amber
-const ACCENT_2: [number, number, number] = [251, 113, 133]; // coral/rose
+// Mirrors the --accent / --accent-2 fill tokens in globals.css, plus the cool
+// sky note already used in the hero's background wash. These are graphics,
+// not text, so the vivid fills are the right variants here.
+const PALETTE: [number, number, number][] = [
+  [245, 158, 11], // amber — --accent
+  [251, 113, 133], // coral — --accent-2
+  [56, 189, 248], // sky
+];
+const SPRITE_SIZE = 256;
+const VARIANTS_PER_COLOR = 3;
 
-function easeOutBack(t: number) {
-  const c1 = 1.70158;
-  const c3 = c1 + 1;
-  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
-}
+/**
+ * One soft, irregular smoke blob, pre-rendered once to an offscreen canvas.
+ * Built from a handful of overlapping radial gradients rather than a single
+ * one — a lone gradient reads as fog, the clustered version has the lumpy
+ * edge that makes it read as smoke. Pre-rendering keeps the per-frame cost
+ * to a plain drawImage.
+ */
+function makeSprite([cr, cg, cb]: [number, number, number]) {
+  const canvas = document.createElement("canvas");
+  canvas.width = SPRITE_SIZE;
+  canvas.height = SPRITE_SIZE;
+  const sctx = canvas.getContext("2d");
+  if (!sctx) return canvas;
 
-function mixColor(mix: number, factor: number): [number, number, number] {
-  return [0, 1, 2].map((idx) =>
-    Math.min(255, (ACCENT[idx] + (ACCENT_2[idx] - ACCENT[idx]) * mix) * factor)
-  ) as [number, number, number];
-}
-
-function buildBlocks(): Block[] {
-  const blocks: Block[] = [];
-  const totalUnits = Array.from({ length: LEVELS }, (_, k) =>
-    Math.pow(LEVELS - k, 2)
-  ).reduce((a, b) => a + b, 0);
-  let unitCursor = 0;
-
-  for (let k = 0; k < LEVELS; k++) {
-    const size = LEVELS - k;
-    const order: number[] = Array.from({ length: size * size }, (_, i) => i);
-    for (let n = order.length - 1; n > 0; n--) {
-      const r = Math.floor(Math.random() * (n + 1));
-      [order[n], order[r]] = [order[r], order[n]];
-    }
-
-    let idx = 0;
-    for (let i = 0; i < size; i++) {
-      for (let j = 0; j < size; j++) {
-        const gi = i - (size - 1) / 2;
-        const gj = j - (size - 1) / 2;
-        const tx = (gi - gj) * (TILE_W / 2);
-        const ty = (gi + gj) * (TILE_H / 2) - k * LEVEL_H;
-
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 500 + Math.random() * 400;
-
-        const unitIndex = unitCursor + order[idx];
-        const windowSize = 3; // how many "slots" wide each block's own build window is
-        const start = (unitIndex / totalUnits) * BUILD_FRACTION;
-        const end = Math.min(
-          BUILD_FRACTION,
-          ((unitIndex + windowSize) / totalUnits) * BUILD_FRACTION
-        );
-
-        blocks.push({
-          gi,
-          gj,
-          k,
-          tx,
-          ty,
-          sx: Math.cos(angle) * dist,
-          sy: Math.sin(angle) * dist,
-          progressStart: start,
-          progressEnd: Math.max(end, start + 0.001),
-          mix: Math.max(0, Math.min(1, (gi - gj) / (LEVELS - 1) / 2 + 0.5)),
-        });
-        idx++;
-      }
-    }
-    unitCursor += size * size;
+  for (let i = 0; i < 7; i++) {
+    const x = SPRITE_SIZE / 2 + (Math.random() - 0.5) * SPRITE_SIZE * 0.36;
+    const y = SPRITE_SIZE / 2 + (Math.random() - 0.5) * SPRITE_SIZE * 0.36;
+    const radius = SPRITE_SIZE * (0.16 + Math.random() * 0.17);
+    const grad = sctx.createRadialGradient(x, y, 0, x, y, radius);
+    grad.addColorStop(0, `rgba(${cr}, ${cg}, ${cb}, 0.42)`);
+    grad.addColorStop(0.55, `rgba(${cr}, ${cg}, ${cb}, 0.16)`);
+    grad.addColorStop(1, `rgba(${cr}, ${cg}, ${cb}, 0)`);
+    sctx.fillStyle = grad;
+    sctx.beginPath();
+    sctx.arc(x, y, radius, 0, Math.PI * 2);
+    sctx.fill();
   }
 
-  return blocks;
+  return canvas;
 }
 
-function drawIsoBlock(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  scale: number,
-  mix: number,
-  alpha: number
-) {
-  const halfW = (TILE_W / 2) * scale;
-  const halfH = (TILE_H / 2) * scale;
-  const h = (LEVEL_H - 6) * scale;
-
-  const top = mixColor(mix, 1);
-  const left = mixColor(mix, 0.55);
-  const right = mixColor(mix, 0.8);
-
-  ctx.globalAlpha = alpha;
-
-  // Left face
-  ctx.beginPath();
-  ctx.moveTo(cx - halfW, cy);
-  ctx.lineTo(cx, cy + halfH);
-  ctx.lineTo(cx, cy + halfH + h);
-  ctx.lineTo(cx - halfW, cy + h);
-  ctx.closePath();
-  ctx.fillStyle = `rgb(${left[0]}, ${left[1]}, ${left[2]})`;
-  ctx.fill();
-
-  // Right face
-  ctx.beginPath();
-  ctx.moveTo(cx, cy + halfH);
-  ctx.lineTo(cx + halfW, cy);
-  ctx.lineTo(cx + halfW, cy + h);
-  ctx.lineTo(cx, cy + halfH + h);
-  ctx.closePath();
-  ctx.fillStyle = `rgb(${right[0]}, ${right[1]}, ${right[2]})`;
-  ctx.fill();
-
-  // Top face
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - halfH);
-  ctx.lineTo(cx + halfW, cy);
-  ctx.lineTo(cx, cy + halfH);
-  ctx.lineTo(cx - halfW, cy);
-  ctx.closePath();
-  ctx.fillStyle = `rgb(${top[0]}, ${top[1]}, ${top[2]})`;
-  // On the light background a glow washes out, so the block is grounded with
-  // a warm drop shadow instead.
-  ctx.shadowColor = "rgba(120, 53, 15, 0.22)";
-  ctx.shadowBlur = 12 * scale;
-  ctx.shadowOffsetY = 5 * scale;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetY = 0;
-
-  ctx.globalAlpha = 1;
+/** Sideways drift, so a column of smoke sways instead of rising straight up. */
+function wind(y: number, t: number) {
+  return Math.sin(y * 0.0055 + t * 0.6) * 0.22 + Math.sin(y * 0.013 - t * 0.9) * 0.12;
 }
 
 /**
- * Procedural, code-driven hero background: an isometric block structure that
- * assembles piece by piece as the user scrolls through the pinned hero
- * track — scrolling further completes it, scrolling back up un-builds it.
- * Entirely canvas/JS, no video or image assets.
+ * Procedural, code-driven hero background: slow plumes of coloured smoke
+ * rising and curling across the viewport. Entirely canvas/JS, no video or
+ * image assets.
  *
- * Positioned toward the right side of the viewport (near the avatar column)
- * and drawn behind the text via explicit z-index, so it never competes with
- * or covers the copy on the left.
+ * Animation runs on its own rAF loop, independent of scroll, so idle motion
+ * stays smooth. Scroll only feeds cheap derived values (zoom, fade, a little
+ * extra updraft).
  */
 export default function HeroScene({
   name,
@@ -183,7 +96,7 @@ export default function HeroScene({
 }: HeroSceneProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const blocksRef = useRef<Block[]>(buildBlocks());
+  const pointerRef = useRef({ x: 0, y: 0, active: false });
   const [reducedMotion, setReducedMotion] = useState(() =>
     typeof window !== "undefined"
       ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -201,13 +114,10 @@ export default function HeroScene({
     mass: 0.4,
   });
 
-  const contentOpacity = useTransform(
-    smoothProgress,
-    [0, 0.08, 0.82, 1],
-    [1, 1, 1, 0]
-  );
-  const contentY = useTransform(smoothProgress, [0, 1], [0, -40]);
-  const sceneScale = useTransform(smoothProgress, [0, 1], [1, 1.15]);
+  const contentOpacity = useTransform(smoothProgress, [0, 0.55, 1], [1, 1, 0]);
+  const contentY = useTransform(smoothProgress, [0, 1], [0, -60]);
+  const sceneScale = useTransform(smoothProgress, [0, 1], [1, 1.18]);
+  const sceneOpacity = useTransform(smoothProgress, [0, 0.7, 1], [1, 1, 0.15]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -223,57 +133,136 @@ export default function HeroScene({
     if (!context) return;
     const ctx: CanvasRenderingContext2D = context;
 
+    const sprites = PALETTE.flatMap((color) =>
+      Array.from({ length: VARIANTS_PER_COLOR }, () => makeSprite(color))
+    );
+
     let width = 0;
     let height = 0;
-    let dpr = 1;
+    const puffs: Puff[] = [];
+
+    // Two vents: a main plume off toward the avatar column, and a fainter one
+    // low on the left, so the field isn't symmetrical.
+    const vents = () => [
+      { x: width * 0.63, y: height + 60, spread: width * 0.1, weight: 0.72 },
+      { x: width * 0.14, y: height + 90, spread: width * 0.08, weight: 0.28 },
+    ];
+
+    const emit = (seeded: boolean) => {
+      const list = vents();
+      const roll = Math.random();
+      const vent = roll < list[0].weight ? list[0] : list[1];
+
+      const puff: Puff = {
+        x: vent.x + (Math.random() - 0.5) * vent.spread * 2,
+        // Seeded puffs start scattered up the screen so the scene is already
+        // full of smoke on the first frame instead of filling in from below.
+        y: seeded ? Math.random() * height * 1.2 : vent.y,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: -(0.24 + Math.random() * 0.5),
+        r: 34 + Math.random() * 62,
+        growth: 0.14 + Math.random() * 0.22,
+        age: 0,
+        life: 320 + Math.random() * 380,
+        rot: Math.random() * Math.PI * 2,
+        rotV: (Math.random() - 0.5) * 0.0025,
+        peak: 0.1 + Math.random() * 0.13,
+        sprite: Math.floor(Math.random() * sprites.length),
+      };
+      if (seeded) puff.age = Math.random() * puff.life * 0.8;
+      puffs.push(puff);
+    };
 
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       width = rect.width;
       height = rect.height;
       canvas.width = width * dpr;
       canvas.height = height * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      drawFrame(smoothProgress.get());
+      ctx.clearRect(0, 0, width, height);
+      puffs.length = 0;
+      for (let i = 0; i < MAX_PUFFS; i++) emit(true);
     };
 
-    const sorted = [...blocksRef.current].sort((a, b) => a.ty - b.ty);
+    const step = (t: number, updraft: number) => {
+      const pointer = pointerRef.current;
 
-    function drawFrame(progress: number) {
+      for (let i = puffs.length - 1; i >= 0; i--) {
+        const p = puffs[i];
+
+        p.vx += (wind(p.y, t) - p.vx) * 0.02;
+        p.vy -= 0.0007 * updraft; // buoyancy: smoke accelerates as it rises
+
+        if (pointer.active) {
+          const dx = p.x - pointer.x;
+          const dy = p.y - pointer.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < POINTER_RADIUS && dist > 0.001) {
+            // Like waving a hand through it: shove the smoke outward and let
+            // it billow a little where it's disturbed.
+            const falloff = (1 - dist / POINTER_RADIUS) ** 2;
+            p.vx += (dx / dist) * falloff * 0.55;
+            p.vy += (dy / dist) * falloff * 0.55;
+            p.r += falloff * 0.6;
+          }
+        }
+
+        p.vx *= 0.995;
+        p.vy *= 0.995;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.r += p.growth;
+        p.rot += p.rotV;
+        p.age++;
+
+        if (p.age > p.life || p.y + p.r < -80) {
+          puffs.splice(i, 1);
+        }
+      }
+
+      while (puffs.length < MAX_PUFFS) emit(false);
+    };
+
+    const paint = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Sit closer to the right (toward the avatar column) so the built
-      // structure never overlaps the text block on the left.
-      const cx = width * 0.66;
-      const cy = height / 2 + (LEVELS * LEVEL_H) / 2;
+      for (const p of puffs) {
+        const ratio = p.age / p.life;
+        // Ease in and out over the puff's life so nothing pops in or vanishes.
+        const alpha = Math.sin(Math.PI * ratio) * p.peak;
+        if (alpha <= 0.002) continue;
 
-      for (const b of sorted) {
-        const span = b.progressEnd - b.progressStart;
-        const localT = Math.max(
-          0,
-          Math.min(1, (progress - b.progressStart) / span)
-        );
-        if (localT <= 0) continue;
-        const eased = easeOutBack(localT);
-        const px = cx + b.tx + b.sx * (1 - eased);
-        const py = cy + b.ty + b.sy * (1 - eased);
-        const scale = 0.4 + 0.6 * Math.min(1, localT * 1.4);
-        drawIsoBlock(ctx, px, py, scale, b.mix, 1);
+        ctx.globalAlpha = alpha;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.drawImage(sprites[p.sprite], -p.r, -p.r, p.r * 2, p.r * 2);
+        ctx.restore();
       }
-    }
+
+      ctx.globalAlpha = 1;
+    };
 
     resize();
     window.addEventListener("resize", resize);
 
-    let frameId: number;
+    let frameId = 0;
+    let elapsed = 0;
+
     const tick = () => {
-      drawFrame(smoothProgress.get());
+      elapsed += 0.006;
+      step(elapsed, 1 + smoothProgress.get() * 1.5);
+      paint();
       frameId = requestAnimationFrame(tick);
     };
 
     if (reducedMotion) {
-      drawFrame(1); // draw fully assembled, static
+      // No animation: let the plume develop for a fixed number of steps and
+      // leave the resulting drift as one static composition.
+      for (let i = 0; i < 260; i++) step(i * 0.006, 1);
+      paint();
     } else {
       frameId = requestAnimationFrame(tick);
     }
@@ -285,22 +274,51 @@ export default function HeroScene({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reducedMotion]);
 
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (reducedMotion) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    pointerRef.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      active: true,
+    };
+  };
+
+  const onPointerLeave = () => {
+    pointerRef.current = { ...pointerRef.current, active: false };
+  };
+
   return (
-    <div ref={trackRef} className="relative h-[250vh]">
-      <div className="sticky top-0 flex h-screen items-center overflow-hidden">
+    <div ref={trackRef} className="relative h-[150vh]">
+      <div
+        onPointerMove={onPointerMove}
+        onPointerLeave={onPointerLeave}
+        className="sticky top-0 flex h-screen items-center overflow-hidden"
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-20"
+          style={{
+            background:
+              "radial-gradient(60rem 40rem at 50% -10%, rgba(245,158,11,0.18), transparent 60%), radial-gradient(50rem 30rem at 90% 20%, rgba(251,113,133,0.16), transparent 60%), radial-gradient(45rem 30rem at 8% 85%, rgba(56,189,248,0.12), transparent 60%)",
+          }}
+        />
+
         <motion.canvas
           ref={canvasRef}
           aria-hidden
           className="absolute inset-0 -z-10 h-full w-full"
-          style={{ scale: sceneScale }}
-        />
-
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10"
           style={{
-            background:
-              "radial-gradient(60rem 40rem at 50% -10%, rgba(245,158,11,0.18), transparent 60%), radial-gradient(50rem 30rem at 90% 20%, rgba(251,113,133,0.16), transparent 60%), radial-gradient(45rem 30rem at 8% 85%, rgba(56,189,248,0.12), transparent 60%)",
+            scale: sceneScale,
+            opacity: sceneOpacity,
+            // Thin the smoke out behind the copy on the left so the text
+            // always stays the most legible thing on screen.
+            maskImage:
+              "linear-gradient(to right, rgba(0,0,0,0.25), rgba(0,0,0,0.95) 55%)",
+            WebkitMaskImage:
+              "linear-gradient(to right, rgba(0,0,0,0.25), rgba(0,0,0,0.95) 55%)",
           }}
         />
 
