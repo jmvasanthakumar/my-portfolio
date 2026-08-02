@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import Image from "next/image";
 
+import HeroMetro from "./HeroMetro";
+
 interface HeroSceneProps {
   name: string;
   title: string;
@@ -44,10 +46,11 @@ function connectionLooksFast() {
 }
 
 /**
- * The hero. Motion here is deliberately restrained and CSS-driven: a slow
- * aurora drift on the backdrop, and a rotating gradient ring plus a gentle
- * float on the portrait frame. The photo itself is never filtered, masked or
- * abstracted — it reads as a clean, sharp portrait at every size.
+ * The hero. Motion here is deliberately restrained and CSS-driven: a metro-map
+ * backdrop with trains gliding along its routes (see HeroMetro) over a soft
+ * aurora wash, and a rotating gradient ring plus a gentle float on the
+ * portrait frame. The photo itself is never filtered, masked or abstracted —
+ * it reads as a clean, sharp portrait at every size.
  *
  * Earlier iterations put a canvas/WebGL effect here (particles, smoke, a
  * shader mesh gradient, a halftone portrait). They were dropped: they either
@@ -121,6 +124,7 @@ export default function HeroScene({
     <div ref={trackRef} className="relative h-[150svh]">
       <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
         <div aria-hidden className="hero-aurora pointer-events-none absolute inset-0 -z-10" />
+        <HeroMetro />
 
         <motion.div
           style={{ opacity: contentOpacity, y: contentY }}

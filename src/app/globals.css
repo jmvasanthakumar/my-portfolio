@@ -94,13 +94,95 @@ body {
 
 /* Hero backdrop: three soft colour fields that drift slowly against each
    other. Pure CSS — no canvas, no JS — so it costs nothing on the main
-   thread and degrades to a static wash when motion is reduced. */
+   thread and degrades to a static wash when motion is reduced. Kept softer
+   than it used to be so the metro map layered over it stays readable. */
 .hero-aurora {
   background:
-    radial-gradient(60rem 40rem at 50% -10%, rgba(245, 158, 11, 0.20), transparent 60%),
-    radial-gradient(50rem 32rem at 88% 18%, rgba(251, 113, 133, 0.18), transparent 60%),
-    radial-gradient(45rem 30rem at 8% 88%, rgba(56, 189, 248, 0.14), transparent 60%);
+    radial-gradient(60rem 40rem at 50% -10%, rgba(245, 158, 11, 0.14), transparent 60%),
+    radial-gradient(50rem 32rem at 88% 18%, rgba(251, 113, 133, 0.13), transparent 60%),
+    radial-gradient(45rem 30rem at 8% 88%, rgba(56, 189, 248, 0.10), transparent 60%);
   animation: hero-aurora-drift 26s ease-in-out infinite alternate;
+}
+
+/* Hero metro map: a transit diagram behind the copy, with trains running the
+   routes. Each route is drawn twice — a faint base line, and a dashed overlay
+   whose offset animates so a short lit segment travels along it. `pathLength`
+   is normalised to 1 on the overlay, so one dash pattern describes the same
+   two-carriage train on every route and the loop closes seamlessly.
+
+   The mask punches a soft hole where the intro copy sits, so the lines never
+   compete with the type. */
+.hero-metro {
+  --hero-metro-hole: radial-gradient(
+    68% 58% at 28% 46%,
+    transparent 0%,
+    rgba(0, 0, 0, 0.45) 55%,
+    #000 82%
+  );
+  -webkit-mask-image: var(--hero-metro-hole);
+  mask-image: var(--hero-metro-hole);
+}
+
+.hero-metro-line {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.22;
+}
+
+.hero-metro-train {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.75;
+  /* Two carriages and a long gap; the four values sum to exactly 1 (the
+     normalised path length), which is what makes the loop seamless. */
+  stroke-dasharray: 0.05 0.014 0.026 0.91;
+  animation: hero-metro-run linear infinite;
+}
+
+@keyframes hero-metro-run {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.hero-metro-stop {
+  fill: var(--background);
+  stroke-width: 4;
+  opacity: 0.55;
+}
+
+.hero-metro-stop--interchange {
+  stroke: var(--foreground);
+  stroke-width: 5;
+  opacity: 0.35;
+}
+
+.hero-metro-ping {
+  fill: none;
+  stroke: var(--accent-ink);
+  stroke-width: 3;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hero-metro-ping 4.2s ease-out infinite;
+}
+
+@keyframes hero-metro-ping {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.45;
+  }
+  70%,
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
 }
 
 @keyframes hero-aurora-drift {
@@ -148,8 +230,20 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .hero-aurora,
   .hero-ring,
-  .hero-float {
+  .hero-float,
+  .hero-metro-train,
+  .hero-metro-ping {
     animation: none;
+  }
+
+  /* With the trains stopped, park one carriage at the start of each route so
+     the map still reads as a map rather than as a broken dashed line. */
+  .hero-metro-train {
+    stroke-dashoffset: 0.97;
+  }
+
+  .hero-metro-ping {
+    opacity: 0;
   }
 }
 
