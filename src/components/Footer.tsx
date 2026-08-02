@@ -6,11 +6,10 @@ export default async function Footer() {
 
   return (
     <footer className="border-t border-border py-8">
-      <div className="section-container flex flex-col items-center justify-between gap-2 text-sm text-muted sm:flex-row">
+      <div className="section-container text-center text-sm text-muted">
         <p>
           © {year} {profile.name}
         </p>
-        <p>Built with Next.js</p>
       </div>
     </footer>
   );

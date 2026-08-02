@@ -92,6 +92,67 @@ body {
     0 10px 28px -14px rgba(120, 100, 70, 0.22);
 }
 
+/* Hero backdrop: three soft colour fields that drift slowly against each
+   other. Pure CSS — no canvas, no JS — so it costs nothing on the main
+   thread and degrades to a static wash when motion is reduced. */
+.hero-aurora {
+  background:
+    radial-gradient(60rem 40rem at 50% -10%, rgba(245, 158, 11, 0.20), transparent 60%),
+    radial-gradient(50rem 32rem at 88% 18%, rgba(251, 113, 133, 0.18), transparent 60%),
+    radial-gradient(45rem 30rem at 8% 88%, rgba(56, 189, 248, 0.14), transparent 60%);
+  animation: hero-aurora-drift 26s ease-in-out infinite alternate;
+}
+
+@keyframes hero-aurora-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-2%, 1.5%, 0) scale(1.08);
+  }
+}
+
+/* Portrait frame: a conic gradient ring that turns slowly behind the photo,
+   and a slow vertical float on the whole frame. The photo itself is never
+   animated, filtered or masked — it stays sharp and fully legible. */
+.hero-ring {
+  background: conic-gradient(
+    from 0deg,
+    var(--accent),
+    var(--accent-2),
+    #38bdf8,
+    var(--accent)
+  );
+  animation: hero-ring-spin 14s linear infinite;
+}
+
+@keyframes hero-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.hero-float {
+  animation: hero-float-bob 7s ease-in-out infinite alternate;
+}
+
+@keyframes hero-float-bob {
+  from {
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-aurora,
+  .hero-ring,
+  .hero-float {
+    animation: none;
+  }
+}
+
 .section-container {
   max-width: 72rem;
   margin-left: auto;

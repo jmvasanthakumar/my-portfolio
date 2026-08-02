@@ -4,7 +4,6 @@ export interface Profile {
   tagline: string;
   location: string;
   email: string;
-  phone: string;
   linkedin: string;
   yearsOfExperience: number;
   /** Personal photo — a blob/CDN URL, swappable without touching components. */

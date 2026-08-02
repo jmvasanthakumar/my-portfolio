@@ -34,12 +34,6 @@ export default async function Contact() {
             >
               LinkedIn
             </a>
-            <a
-              href={`tel:${profile.phone}`}
-              className="rounded-full border border-border px-6 py-3 text-sm font-medium transition-colors hover:border-accent hover:text-accent-ink"
-            >
-              {profile.phone}
-            </a>
           </div>
         </Reveal>
       </div>
