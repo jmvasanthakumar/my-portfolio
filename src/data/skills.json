@@ -1,0 +1,27 @@
+{
+  "technical": [
+    "C#",
+    "ASP.NET Core Web API",
+    "Entity Framework",
+    "Angular",
+    "MS SQL Server",
+    "PostgreSQL",
+    "Git",
+    "Azure DevOps",
+    "Azure App Services",
+    "Azure Functions"
+  ],
+  "functional": [
+    "Agile Methodologies",
+    "Object-Oriented Programming (OOP)",
+    "SOLID Principles",
+    "CQRS Pattern",
+    "Mediator Design Pattern"
+  ],
+  "domain": [
+    "Insurance",
+    "Payments",
+    "Telecommunications",
+    "Elevator & Escalator Systems"
+  ]
+}

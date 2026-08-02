@@ -1,0 +1,64 @@
+[
+  {
+    "id": "payment-systems",
+    "name": "Payment Systems",
+    "period": "Sep 2025 - Present",
+    "technologies": ["C#", "ASP.NET Core", "NuGet", "Web API", "Angular"],
+    "description": "A payment system including NuGet library components for POS payment processing and a Web API for webhook-based payment reconciliation.",
+    "bullets": [
+      "Design and develop NuGet library components for seamless integration with POS systems for payment processing",
+      "Implement robust Web APIs for webhook-based payment reconciliation to ensure transaction accuracy",
+      "Focus on implementing scalable design patterns to enable easy integration with multiple payment providers"
+    ]
+  },
+  {
+    "id": "elevator-platform",
+    "name": "Elevator Technical Specification Platform",
+    "period": "Aug 2024 - Sep 2025",
+    "technologies": ["C#", "ASP.NET Web API", "Angular", "MS SQL Server", "Azure App Service"],
+    "description": "An application to capture elevator technical specifications that assist construction planning and on-site maintenance for elevators and escalators.",
+    "bullets": [
+      "Developed and maintained RESTful Web APIs using ASP.NET Core for elevator specification management",
+      "Built responsive UI components using Angular for technical data entry and review",
+      "Integrated the application with MS SQL Server for structured data storage and retrieval",
+      "Hosted and managed deployments via Azure App Service for production and test environments"
+    ]
+  },
+  {
+    "id": "airline-catering",
+    "name": "Airline Management – Onboard Meal & Catering System",
+    "period": "Jan 2024 - Aug 2024",
+    "technologies": ["C#", "ASP.NET Core Web API", "Angular", "PostgreSQL", "Git", "Azure DevOps", "Azure"],
+    "description": "An internal application to manage onboard meals and catering services for airline commercial operations.",
+    "bullets": [
+      "Owned end-to-end development of features, including requirement gathering, development, and delivery",
+      "Built and maintained RESTful APIs using ASP.NET Core with PostgreSQL as the data store",
+      "Developed dynamic and responsive front-end modules using Angular",
+      "Investigated and resolved bugs across frontend and backend components to ensure stable performance"
+    ]
+  },
+  {
+    "id": "voip-service",
+    "name": "VoIP Service",
+    "period": "Jan 2023 - Dec 2023",
+    "technologies": ["C#", "ASP.NET Core Web API", "ASP.NET MVC", "SQL Server", "Git", "Azure DevOps", "Azure"],
+    "description": "An application for telecom commercial operations focused on provisioning and maintaining VoIP service orders and license management.",
+    "bullets": [
+      "Developed and maintained Web APIs and MVC components using ASP.NET and SQL Server",
+      "Consumed and integrated external web services from telecom providers to support license provisioning workflows",
+      "Deployed services to testing environments and supported functional validation"
+    ]
+  },
+  {
+    "id": "remote-location-intelligence",
+    "name": "Remote Location Intelligence",
+    "period": "Jul 2021 - Dec 2022",
+    "technologies": ["C#", "ASP.NET Core Web API", "PostgreSQL", "Git", "Azure DevOps", "Postman", "ArcGIS"],
+    "description": "A product to automate the collection of site-specific data to analyze large volumes of information in the context of an address, enabling holistic planning, risk prediction, and mitigation.",
+    "bullets": [
+      "Developed and maintained backend services using ASP.NET Core Web API to support data ingestion and processing",
+      "Integrated ArcGIS for geospatial data mapping and analysis at the site/address level",
+      "Worked with PostgreSQL for data storage and querying large spatial datasets"
+    ]
+  }
+]

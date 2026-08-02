@@ -1,0 +1,23 @@
+[
+  {
+    "id": "update-1",
+    "date": "2025-09-01",
+    "tag": "Career",
+    "title": "Joined Talentica Software",
+    "description": "Started as a Software Engineer, working on Web APIs and NuGet library components."
+  },
+  {
+    "id": "update-2",
+    "date": "2025-06-01",
+    "tag": "Learning",
+    "title": "Exploring AI-assisted development",
+    "description": "Getting hands-on with AI-assisted coding workflows to speed up delivery without compromising quality."
+  },
+  {
+    "id": "update-3",
+    "date": "2024-08-01",
+    "tag": "Certification",
+    "title": "Completed GH-300: GitHub Copilot",
+    "description": "Certified on effective use of GitHub Copilot in day-to-day development."
+  }
+]

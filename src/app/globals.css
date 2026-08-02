@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fdfcf9;
+  --background-alt: #f5f1e8;
+  --surface: #ffffff;
+  --foreground: #1c1917;
+  --muted: #6b6259;
+
+  /* Fill accents: vivid, for buttons, graphics, dots and borders. */
+  --accent: #f59e0b;
+  --accent-2: #fb7185;
+  /* Ink accents: deeper variants of the same hues, for TEXT on a light
+     background. The fill accents are far too light to pass contrast as
+     text — always use these when colouring type. */
+  --accent-ink: #b45309;
+  --accent-2-ink: #be123c;
+  /* Foreground colour to use on top of an --accent fill. */
+  --accent-contrast: #1c1917;
+
+  --border: #e8e2d6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-background-alt: var(--background-alt);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-2-ink: var(--accent-2-ink);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: light;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-alt);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d9d1c2;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c4b9a5;
+}
+
+.gradient-text {
+  background-image: linear-gradient(90deg, var(--accent-ink), var(--accent-2-ink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Named "glass" for continuity with the previous dark theme, but on a light
+   background a translucent panel reads as muddy — this is a solid raised
+   surface, lifted off the page with a soft warm shadow instead. */
+.glass-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 1px 2px rgba(120, 100, 70, 0.06),
+    0 10px 28px -14px rgba(120, 100, 70, 0.22);
+}
+
+.section-container {
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}

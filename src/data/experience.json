@@ -1,0 +1,43 @@
+[
+  {
+    "id": "talentica",
+    "company": "Talentica Software",
+    "role": "Software Engineer",
+    "startDate": "2025-09",
+    "endDate": null,
+    "current": true,
+    "bullets": [
+      "Developed and maintained Web APIs and NuGet library components using ASP.NET",
+      "Translate customer requirements into technical features and user stories",
+      "Collaborated with cross-functional teams",
+      "Participated in peer code reviews to maintain code quality and standards"
+    ]
+  },
+  {
+    "id": "infosys",
+    "company": "Infosys Ltd",
+    "role": "Senior Associate Consultant",
+    "startDate": "2024-08",
+    "endDate": "2025-09",
+    "current": false,
+    "bullets": [
+      "Developed and maintained Web APIs and MVC components using ASP.NET and SQL Server",
+      "Collaborated with cross-functional teams to ensure effective project execution",
+      "Mentored junior engineers, providing guidance on methodologies and tools used"
+    ]
+  },
+  {
+    "id": "cognizant",
+    "company": "Cognizant Technology Solutions Pvt Ltd",
+    "role": "Software Engineer",
+    "startDate": "2021-07",
+    "endDate": "2024-08",
+    "current": false,
+    "bullets": [
+      "Developed and maintained Web APIs and MVC components using ASP.NET and SQL Server",
+      "Deployed services to testing environments and supported functional validation",
+      "Investigated and resolved backend bugs to ensure reliability and service continuity",
+      "Participated in peer code reviews to maintain code quality and ensure adherence to standards"
+    ]
+  }
+]

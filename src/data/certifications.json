@@ -1,0 +1,19 @@
+{
+  "certifications": [
+    { "id": "az-900", "name": "AZ-900: Azure Fundamentals" },
+    { "id": "ai-102", "name": "AI-102: Designing and Implementing a Microsoft Azure AI Solution" },
+    { "id": "gh-300", "name": "GH-300: GitHub Copilot" }
+  ],
+  "recognitions": [
+    {
+      "id": "silver-recognition",
+      "title": "Silver Recognition for contributions during code refactoring and migration activities",
+      "date": "2022-11"
+    },
+    {
+      "id": "best-team",
+      "title": "Recognized as the best team by the client for delivery excellence",
+      "date": "2023-06"
+    }
+  ]
+}
