@@ -41,7 +41,9 @@ export async function generateMetadata(): Promise<Metadata> {
     publisher: profile.name,
     keywords: [
       profile.name,
+      ...profile.alternateNames,
       profile.title,
+      `${profile.name} software engineer`,
       "software engineer portfolio",
       "backend engineer",
       "web developer",

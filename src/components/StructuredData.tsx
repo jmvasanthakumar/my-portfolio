@@ -28,6 +28,11 @@ export default async function StructuredData() {
     "@type": "Person",
     "@id": `${profile.siteUrl}/#person`,
     name: profile.name,
+    // Ties every spelling of the name to this one entity, so a search for
+    // "JM Vasantha Kumar" and one for "Vasanthakumar JM" resolve here.
+    alternateName: profile.alternateNames,
+    givenName: "Vasantha Kumar",
+    familyName: "JM",
     jobTitle: profile.title,
     description: profile.tagline,
     email: `mailto:${profile.email}`,

@@ -1,5 +1,13 @@
 export interface Profile {
   name: string;
+  /**
+   * Every spelling of the name people actually search for — reordered,
+   * spaced, unspaced. Emitted as schema.org `alternateName`, which is the
+   * sanctioned way to tell search engines these all refer to one person.
+   * Keep them genuine variants; padding this with unrelated terms is
+   * keyword stuffing and gets discounted.
+   */
+  alternateNames: string[];
   title: string;
   /**
    * Canonical origin of the deployed site, no trailing slash. Everything
