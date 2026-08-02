@@ -1,6 +1,6 @@
 import { getProfile } from "@/services/portfolioService";
 import Reveal from "./Reveal";
-import { GitHubIcon, InstagramIcon, LinkedInIcon } from "./icons";
+import { GitHubIcon, GmailIcon, InstagramIcon, LinkedInIcon } from "./icons";
 
 export default async function Contact() {
   const profile = await getProfile();
@@ -18,49 +18,50 @@ export default async function Contact() {
             collaborations. Reach out through any of the channels below.
           </p>
 
-          {/* Email stays a labelled pill — full width on phones, so a long
-              address never overflows. The socials sit beside it as icon
-              buttons, 48px square so they stay comfortable tap targets. */}
-          <div className="mt-8 flex flex-col items-center gap-4 sm:mt-10 sm:flex-row sm:flex-wrap sm:justify-center">
+          {/* Every channel is the same icon button — 48px square, so they stay
+              comfortable tap targets and read as one set. Email leads the row;
+              the address lives in the label and title rather than on screen,
+              so a long address can never overflow on a phone. */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-10">
             <a
               href={`mailto:${profile.email}`}
-              className="w-full break-all rounded-full bg-accent px-6 py-3 text-sm font-medium text-accent-contrast transition-transform hover:scale-105 sm:w-auto"
+              aria-label={`Email ${profile.email}`}
+              title={profile.email}
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-accent hover:text-accent-ink"
             >
-              {profile.email}
+              <GmailIcon className="h-[18px] w-[18px]" />
             </a>
 
-            <div className="flex items-center gap-3">
-              <a
-                href={profile.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="LinkedIn"
-                title="LinkedIn"
-                className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-accent hover:text-accent-ink"
-              >
-                <LinkedInIcon className="h-5 w-5" />
-              </a>
-              <a
-                href={profile.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="GitHub"
-                title="GitHub"
-                className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-accent hover:text-accent-ink"
-              >
-                <GitHubIcon className="h-5 w-5" />
-              </a>
-              <a
-                href={profile.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                title="Instagram"
-                className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-accent hover:text-accent-ink"
-              >
-                <InstagramIcon className="h-5 w-5" />
-              </a>
-            </div>
+            <a
+              href={profile.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              title="LinkedIn"
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-accent hover:text-accent-ink"
+            >
+              <LinkedInIcon className="h-5 w-5" />
+            </a>
+            <a
+              href={profile.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+              title="GitHub"
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-accent hover:text-accent-ink"
+            >
+              <GitHubIcon className="h-5 w-5" />
+            </a>
+            <a
+              href={profile.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              title="Instagram"
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-accent hover:text-accent-ink"
+            >
+              <InstagramIcon className="h-5 w-5" />
+            </a>
           </div>
         </Reveal>
       </div>

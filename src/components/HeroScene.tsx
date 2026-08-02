@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useScroll, useSpring, useTransform } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+  useTransform,
+} from "framer-motion";
 import Image from "next/image";
-
-import HeroMetroLine from "./HeroMetroLine";
 
 interface HeroSceneProps {
   name: string;
@@ -46,11 +51,18 @@ function connectionLooksFast() {
 }
 
 /**
- * The hero. Motion here is deliberately restrained and CSS-driven: a slow
- * aurora drift on the backdrop, a metro line along the bottom whose stops are
- * the page's sections (HeroMetroLine), and a rotating gradient ring plus a
- * gentle float on the portrait frame. The photo itself is never filtered,
- * masked or abstracted — it reads as a clean, sharp portrait at every size.
+ * The hero. Ambient motion is deliberately restrained and CSS-driven: a slow
+ * aurora drift on the backdrop, a rotating gradient ring, and a gentle float
+ * on the portrait frame.
+ *
+ * On top of that the hero answers the pointer, in three layers off one
+ * position: a spotlight glides after the cursor, the backdrop drifts the
+ * other way, and the portrait turns to face it. The portrait can also be
+ * picked up and thrown — it springs back to where it belongs. All of it is
+ * transform-only, so it stays on the compositor.
+ *
+ * The photo itself is never filtered, masked or abstracted — it reads as a
+ * clean, sharp portrait at every size.
  *
  * Earlier iterations put a canvas/WebGL effect here (particles, smoke, a
  * shader mesh gradient, a halftone portrait). They were dropped: they either
@@ -72,6 +84,43 @@ export default function HeroScene({
   const portraitRef = useRef<HTMLDivElement>(null);
   const [wantHd, setWantHd] = useState(false);
   const [hdVisible, setHdVisible] = useState(false);
+
+  const reduced = useReducedMotion();
+  // Pointer position over the hero, normalised to -1…1 from the centre. Only
+  // ever set for a mouse or pen — a touch shouldn't leave the spotlight
+  // stranded wherever the last tap landed.
+  const [tracksPointer, setTracksPointer] = useState(false);
+  const pointerX = useMotionValue(0);
+  const pointerY = useMotionValue(0);
+  const glide = { stiffness: 110, damping: 20, mass: 0.6 };
+  const smoothX = useSpring(pointerX, glide);
+  const smoothY = useSpring(pointerY, glide);
+
+  // Three depths off the same pointer: the light leads, the backdrop drifts
+  // against it, and the portrait turns to face it.
+  const spotX = useTransform(smoothX, (value) => `${value * 26}%`);
+  const spotY = useTransform(smoothY, (value) => `${value * 26}%`);
+  const auroraX = useTransform(smoothX, (value) => value * -14);
+  const auroraY = useTransform(smoothY, (value) => value * -10);
+  const tiltY = useTransform(smoothX, (value) => value * 11);
+  const tiltX = useTransform(smoothY, (value) => value * -11);
+
+  useEffect(() => {
+    if (reduced) return;
+    setTracksPointer(window.matchMedia("(pointer: fine)").matches);
+  }, [reduced]);
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!tracksPointer || event.pointerType === "touch") return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    pointerX.set(((event.clientX - bounds.left) / bounds.width - 0.5) * 2);
+    pointerY.set(((event.clientY - bounds.top) / bounds.height - 0.5) * 2);
+  };
+
+  const recentre = () => {
+    pointerX.set(0);
+    pointerY.set(0);
+  };
 
   const { scrollYProgress } = useScroll({
     target: trackRef,
@@ -122,8 +171,28 @@ export default function HeroScene({
     // svh, not vh: on phones `100vh` is the viewport with the browser chrome
     // hidden, so a vh-sized hero gets its bottom cropped by the toolbar.
     <div ref={trackRef} className="relative h-[150svh]">
-      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
-        <div aria-hidden className="hero-aurora pointer-events-none absolute inset-0 -z-10" />
+      <div
+        onPointerMove={handlePointerMove}
+        onPointerLeave={recentre}
+        className="sticky top-0 flex h-[100svh] items-center overflow-hidden"
+      >
+        {/* Backdrop, one layer behind the light: it drifts *against* the
+            pointer, which is what gives the hero a sense of depth. */}
+        <motion.div
+          aria-hidden
+          style={tracksPointer ? { x: auroraX, y: auroraY } : undefined}
+          className="pointer-events-none absolute inset-0 -z-10"
+        >
+          <div className="hero-aurora absolute inset-0" />
+        </motion.div>
+
+        {tracksPointer && (
+          <motion.div
+            aria-hidden
+            style={{ x: spotX, y: spotY }}
+            className="hero-spot pointer-events-none -z-10"
+          />
+        )}
 
         <motion.div
           style={{ opacity: contentOpacity, y: contentY }}
@@ -146,13 +215,13 @@ export default function HeroScene({
             <div className="mt-6 flex flex-wrap gap-3 sm:mt-8 sm:gap-4">
               <a
                 href="#contact"
-                className="rounded-full bg-accent px-5 py-3 text-sm font-medium text-accent-contrast transition-transform hover:scale-105 sm:px-6"
+                className="select-none rounded-full bg-accent px-5 py-3 text-sm font-medium text-accent-contrast transition-transform hover:scale-105 sm:px-6"
               >
                 Get in touch
               </a>
               <a
                 href="#projects"
-                className="rounded-full border border-border px-5 py-3 text-sm font-medium transition-colors hover:border-accent hover:text-accent-ink sm:px-6"
+                className="select-none rounded-full border border-border px-5 py-3 text-sm font-medium transition-colors hover:border-accent hover:text-accent-ink sm:px-6"
               >
                 View projects
               </a>
@@ -162,10 +231,22 @@ export default function HeroScene({
           {/* Natural source order puts the portrait after the intro, which is
               exactly the mobile stacking we want; on md+ it becomes the
               right-hand column. */}
-          <div className="hero-float justify-self-center">
-            <div
+          <div
+            className="hero-float justify-self-center"
+            style={{ perspective: 1000 }}
+          >
+            {/* Turns to face the pointer, and can be picked up and thrown —
+                it springs back to where it belongs on release. The photo is
+                only ever moved and turned, never filtered or distorted. */}
+            <motion.div
               ref={portraitRef}
-              className="relative h-44 w-44 sm:h-56 sm:w-56 lg:h-72 lg:w-72"
+              style={tracksPointer ? { rotateX: tiltX, rotateY: tiltY } : undefined}
+              drag={reduced ? false : true}
+              dragElastic={0.16}
+              dragSnapToOrigin
+              dragTransition={{ bounceStiffness: 260, bounceDamping: 24 }}
+              whileTap={{ scale: 0.97 }}
+              className="hero-grab relative h-44 w-44 sm:h-56 sm:w-56 lg:h-72 lg:w-72"
             >
               <div
                 aria-hidden
@@ -185,6 +266,7 @@ export default function HeroScene({
                   src={avatarUrl}
                   alt={name}
                   fill
+                  draggable={false}
                   sizes="(max-width: 640px) 176px, (max-width: 1024px) 224px, 288px"
                   className="object-cover object-[50%_35%]"
                   priority
@@ -200,6 +282,7 @@ export default function HeroScene({
                     alt=""
                     aria-hidden
                     fill
+                    draggable={false}
                     sizes="900px"
                     onLoad={() => setHdVisible(true)}
                     className={`object-cover object-[50%_35%] transition-opacity duration-700 ${
@@ -208,28 +291,13 @@ export default function HeroScene({
                   />
                 )}
               </div>
-            </div>
+            </motion.div>
           </div>
         </motion.div>
 
-        {/* The line sits under the hero content and above the scroll hint; it
-            fades out on the same scroll progress as everything else.
-
-            Shown from md up — the same breakpoint at which the nav switches
-            from the hamburger to inline links, and at which the portrait moves
-            into its own column. Below it the portrait stacks under the copy
-            and fills the bottom of the hero, leaving nowhere for the line to
-            go; those sizes reach the sections through the nav menu. */}
         <motion.div
           style={{ opacity: contentOpacity }}
-          className="section-container pointer-events-none absolute inset-x-0 bottom-16 z-10 hidden md:block"
-        >
-          <HeroMetroLine />
-        </motion.div>
-
-        <motion.div
-          style={{ opacity: contentOpacity }}
-          className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 text-xs text-muted sm:bottom-8"
+          className="hero-hint absolute bottom-4 left-1/2 z-10 -translate-x-1/2 text-xs text-muted sm:bottom-8"
         >
           scroll ↓
         </motion.div>

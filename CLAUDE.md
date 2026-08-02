@@ -86,22 +86,24 @@ Framer Motion drives two things, and only these two:
    h-[100svh]` inner container, with content opacity/`y` driven by a damped
    `useSpring` over `useScroll`. Keep the track short — the page should get
    going quickly.
-2. `HeroMetroLine.tsx` — the metro line across the bottom of the hero, one
-   stop per section. A train patrols it (`useAnimationFrame`, a triangle wave
-   between the first and last stop) and pulls in at whichever stop is hovered
-   or focused, with a `useSpring` doing the travel so a change of destination
-   reads as slowing and arriving rather than teleporting. The track lights up
-   behind the train and the stop it arrives at swells; the stop labels are the
-   only text on the line — deliberately no tooltip or destination board. Under
-   `prefers-reduced-motion` the patrol and the spring are both dropped — the
-   train only moves, instantly, to a stop the visitor picks.
+2. The pointer response. One pointer position (normalised to −1…1 from the
+   hero's centre, smoothed by a `useSpring`) feeds three layers at different
+   depths: `.hero-spot` — a warm pool of light — glides after the cursor, the
+   aurora drifts the opposite way, and the portrait turns to face it
+   (`rotateX`/`rotateY`, ±11° over a `perspective`). The portrait is also
+   `drag` + `dragSnapToOrigin`, so it can be picked up and thrown and springs
+   back. All transform-only, so it stays on the compositor.
 
-   The stops come from `Nav.tsx`'s exported `LINKS`, so the line, the nav and
-   the section ids can't drift apart — add a section there and it appears
-   here. Positioning is percentage-based off `(i + 0.5) / n`, and the whole
-   line is `hidden md:block`: below `md` the portrait stacks under the copy
-   and fills the bottom of the hero, leaving nowhere for it to go (that's the
-   same breakpoint where the nav switches to the hamburger).
+   Guards, don't remove them: the spotlight and tilt only mount when
+   `matchMedia("(pointer: fine)")` matches and motion isn't reduced (a touch
+   would otherwise strand the light wherever the last tap landed), and drag is
+   off under `prefers-reduced-motion`.
+
+**Selection**: chrome isn't content. `nav`, `button`, `[role="button"]`,
+`.hero-float` and `.hero-hint` are `user-select: none`, and every `img` is
+non-selectable and non-draggable — otherwise dragging the portrait ghost-drags
+the photo and highlights half the hero. Prose, headings and contact details
+stay selectable; keep it that way.
 
 **The portrait is never filtered, masked, or abstracted.** The photo renders
 through `next/image` inside a round frame; the animation surrounds it. On
@@ -114,10 +116,13 @@ isometric block build, a particle/flow field, a canvas smoke simulation, a
 WebGL mesh-gradient shader, and a halftone dot-matrix portrait have all been
 tried and rejected — they either competed with the copy or, in the halftone's
 case, made the face unrecognisable. Don't reintroduce a canvas/WebGL hero
-effect without a strong, specific reason. A full SVG metro-map *backdrop*
-(routes and interchanges drifting behind the copy) was also tried and dropped
-— the interactive line is the part that earns its place; the map behind it was
-just noise.
+effect without a strong, specific reason. Two metro treatments were also tried
+and dropped: a full SVG metro-map *backdrop* (routes and interchanges drifting
+behind the copy — just noise), and an interactive metro *line* along the bottom
+of the hero whose stops were the page's sections, with a train that patrolled
+it and pulled in at whichever stop you pointed at. The line worked, but it only
+had room from `md` up and it duplicated the nav; the pointer response is the
+interaction that earns its place.
 
 ## SEO / indexing
 

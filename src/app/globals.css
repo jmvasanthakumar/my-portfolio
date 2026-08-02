@@ -57,6 +57,26 @@ body {
   color: var(--accent-contrast);
 }
 
+/* Chrome, not content. Nav links, buttons and the hero's decorative bits are
+   things you click, not things you'd ever copy — and letting a stray drag
+   highlight them (or ghost-drag the portrait) makes the page feel like a
+   document being mishandled. Prose, headings, project copy and the contact
+   details all stay selectable. */
+nav,
+button,
+[role="button"],
+.hero-float,
+.hero-hint {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+img {
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
 }
@@ -103,130 +123,6 @@ body {
   animation: hero-aurora-drift 26s ease-in-out infinite alternate;
 }
 
-/* The hero's metro line: one stop per section, with a train that patrols it
-   and pulls in at whichever stop is pointed at. Everything here is positioned
-   against the dot centres, which sit 11px below the top of the row (4px of
-   padding + half a 14px dot). Horizontal placement is driven from
-   HeroMetroLine — this file only describes how the pieces look. */
-.hero-line {
-  position: relative;
-}
-
-.hero-line-track {
-  position: absolute;
-  top: 9.5px;
-  height: 3px;
-  border-radius: 999px;
-  background: var(--border);
-}
-
-/* Painting order along the line, back to front: track, lit track, then the
-   stops, then the train. The track pieces are absolutely positioned, so
-   without an explicit layer here they'd paint over the in-flow dots and run
-   straight through them — on a metro map the line always passes behind its
-   stations. The train stays on top so it's never swallowed by a dot when it
-   pulls in. */
-.hero-line-stop {
-  position: relative;
-  z-index: 1;
-}
-
-/* The stretch of line the train has already covered. */
-.hero-line-lit {
-  position: absolute;
-  top: 9.5px;
-  height: 3px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-}
-
-.hero-line-train {
-  position: absolute;
-  z-index: 2;
-  top: 6px;
-  width: 28px;
-  height: 10px;
-  margin-left: -14px;
-  border-radius: 999px;
-  /* Two carriages with a coupling gap between them. */
-  background: linear-gradient(
-    90deg,
-    var(--accent) 0 44%,
-    transparent 44% 56%,
-    var(--accent-2) 56% 100%
-  );
-  filter: drop-shadow(0 2px 6px rgba(245, 158, 11, 0.45));
-}
-
-.hero-line-dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 999px;
-  background: var(--background);
-  border: 3px solid var(--accent);
-  transition:
-    transform 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
-}
-
-.hero-line-label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
-  font-size: 0.625rem;
-  line-height: 1.1;
-  text-align: center;
-  color: var(--muted);
-  transition:
-    color 0.25s ease,
-    transform 0.25s ease;
-}
-
-.hero-line-index {
-  font-family: var(--font-mono), monospace;
-  font-size: 0.5625rem;
-  letter-spacing: 0.08em;
-  opacity: 0.6;
-}
-
-@media (min-width: 640px) {
-  .hero-line-label {
-    font-size: 0.75rem;
-  }
-}
-
-/* Train standing at the stop. */
-.hero-line-stop[data-at="true"] .hero-line-dot {
-  transform: scale(1.2);
-  border-color: var(--accent-2);
-  box-shadow: 0 0 0 5px rgba(251, 113, 133, 0.14);
-}
-
-.hero-line-stop[data-at="true"] .hero-line-label {
-  color: var(--foreground);
-}
-
-/* Pointed at or focused: the stop lifts, whether or not the train is in yet. */
-.hero-line-stop:hover .hero-line-dot,
-.hero-line-stop:focus-visible .hero-line-dot {
-  transform: scale(1.45);
-  border-color: var(--accent-2);
-  box-shadow: 0 0 0 7px rgba(245, 158, 11, 0.18);
-}
-
-.hero-line-stop:hover .hero-line-label,
-.hero-line-stop:focus-visible .hero-line-label {
-  color: var(--accent-ink);
-  transform: translateY(2px);
-}
-
-.hero-line-stop:focus-visible {
-  border-radius: 12px;
-  outline: 2px solid var(--accent-ink);
-  outline-offset: 4px;
-}
 
 @keyframes hero-aurora-drift {
   from {
@@ -235,6 +131,38 @@ body {
   to {
     transform: translate3d(-2%, 1.5%, 0) scale(1.08);
   }
+}
+
+/* Pointer spotlight: a warm pool of light that trails the cursor across the
+   hero. Only mounted for fine pointers and only when motion isn't reduced —
+   HeroScene decides; this is just how it looks. It's translated by a spring,
+   never resized, so it stays a compositor-only effect. */
+.hero-spot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 42rem;
+  height: 42rem;
+  margin-left: -21rem;
+  margin-top: -21rem;
+  border-radius: 999px;
+  background: radial-gradient(
+    closest-side,
+    rgba(245, 158, 11, 0.26),
+    rgba(251, 113, 133, 0.13) 52%,
+    transparent 76%
+  );
+}
+
+/* The portrait invites a drag; the photo itself is never distorted, only
+   moved, and it springs back to where it belongs when released. */
+.hero-grab {
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.hero-grab:active {
+  cursor: grabbing;
 }
 
 /* Portrait frame: a conic gradient ring that turns slowly behind the photo,
