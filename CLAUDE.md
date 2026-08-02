@@ -98,6 +98,30 @@ tried and rejected — they either competed with the copy or, in the halftone's
 case, made the face unrecognisable. Don't reintroduce a canvas/WebGL hero
 effect without a strong, specific reason.
 
+## SEO / indexing
+
+The site is a single indexable page, and everything search-facing derives from
+`profile.json`'s **`siteUrl`** — change the domain there and nowhere else.
+
+- `layout.tsx` → `generateMetadata()`: `metadataBase`, title template,
+  canonical, Open Graph, Twitter card, `robots` directives.
+- `app/robots.ts` → `/robots.txt` (allows everything but `/_next/`, points at
+  the sitemap).
+- `app/sitemap.ts` → `/sitemap.xml`. One URL — the sections are anchors, not
+  routes; listing them separately would report duplicates. `lastModified`
+  tracks the newest entry in `updates.json`.
+- `app/manifest.ts` → `/manifest.webmanifest`.
+- `components/StructuredData.tsx` → schema.org JSON-LD (`ProfilePage` +
+  `WebSite` + `Person`) built from the service layer, so it can't drift from
+  the visible content. Extend it when a section adds meaningful facts.
+- `app/icon.svg` / `app/apple-icon.png` — the VK monogram favicon.
+- `app/opengraph-image.jpg` / `app/twitter-image.jpg` — the share card,
+  regenerated with `node scripts/generate-og-image.cjs` (edit the copy in
+  that script if the name/tagline changes).
+
+All of these prerender as static files during `next build`, so they work on
+Azure Static Web Apps without a server.
+
 ## When adding a new section
 
 1. Add its content to a new (or existing) JSON file in `src/data/`.
