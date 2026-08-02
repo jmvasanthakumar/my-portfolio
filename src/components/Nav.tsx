@@ -22,7 +22,9 @@ export default function Nav({ name }: { name: string }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const firstName = name.split(" ")[0];
+  // "Vasantha Kumar JM" → "Vasantha.Kumar.JM", with the separators picked out
+  // in the accent colour. Derived from the profile name, never hardcoded.
+  const nameParts = name.split(" ").filter(Boolean);
 
   return (
     <header
@@ -32,7 +34,12 @@ export default function Nav({ name }: { name: string }) {
     >
       <nav className="section-container flex items-center justify-between py-4">
         <a href="#top" className="font-semibold tracking-tight">
-          {firstName}<span className="text-accent-ink">.</span>
+          {nameParts.map((part, i) => (
+            <span key={part}>
+              {i > 0 && <span className="text-accent-ink">.</span>}
+              {part}
+            </span>
+          ))}
         </a>
 
         <ul className="hidden md:flex items-center gap-8 text-sm text-muted">

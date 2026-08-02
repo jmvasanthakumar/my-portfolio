@@ -34,6 +34,14 @@ export default async function Contact() {
             >
               LinkedIn
             </a>
+            <a
+              href={profile.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full border border-border px-6 py-3 text-sm font-medium transition-colors hover:border-accent hover:text-accent-ink"
+            >
+              Instagram
+            </a>
           </div>
         </Reveal>
       </div>

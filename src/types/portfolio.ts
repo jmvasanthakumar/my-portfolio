@@ -5,6 +5,7 @@ export interface Profile {
   location: string;
   email: string;
   linkedin: string;
+  instagram: string;
   yearsOfExperience: number;
   /** Personal photo — a blob/CDN URL, swappable without touching components. */
   avatarUrl: string;

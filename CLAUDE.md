@@ -67,52 +67,36 @@ non-resume parts.
     - **Verify, don't assume**: resize the preview to 360×640, then re-check
       `scrollWidth` and that key sections aren't clipped.
 
-## Hero: procedural canvas scene (no video/image assets)
+## Hero: restrained, CSS-driven motion (no video, no canvas)
 
-`Hero.tsx` always renders `HeroScene.tsx` — a code-driven, canvas-based
-animation, never a video. This was a deliberate pivot away from an earlier
-scroll-scrubbed-video approach: video seeking is inherently choppy under fast
-scroll (browsers can't seek frame-accurately without dense keyframing), and
-generating clutter-free footage was also difficult. A canvas animation avoids
-both problems and adds no asset weight.
+`Hero.tsx` renders `HeroScene.tsx`. The hero's motion is deliberately quiet
+and lives entirely in CSS (`globals.css`):
 
-`HeroScene.tsx` draws **rising smoke**: ~190 soft puffs emitted from two
-vents below the viewport, drifting up through a sine "wind", expanding and
-fading, tinted amber / coral / sky. Specifics worth keeping:
+- `.hero-aurora` — the backdrop: three soft radial colour fields that drift
+  slowly against each other (`hero-aurora-drift`).
+- `.hero-ring` — a conic-gradient ring rotating behind the portrait
+  (`hero-ring-spin`).
+- `.hero-float` — a slow vertical bob on the portrait frame
+  (`hero-float-bob`).
+- All three are disabled under `prefers-reduced-motion: reduce`.
 
-- Puffs are pre-rendered sprites (`makeSprite`), each a cluster of seven
-  offset radial gradients on a 256px offscreen canvas. The clustering is
-  what makes it read as smoke — a single radial gradient reads as fog.
-  Nine sprites (3 colors × 3 variants) are built once at mount, so the
-  per-frame cost is just `drawImage`.
-- Scroll track is a short `h-[150vh]` with a `sticky top-0 h-screen` inner
-  container — the hero pins for only ~half a viewport of scrolling. It was
-  deliberately shortened from 250vh; don't lengthen it again.
-- Its own `requestAnimationFrame` loop drives the motion, independent of
-  scroll, so idle animation is smooth and never blocked on scroll events.
-- The canvas is cleared each frame and stays transparent, so the radial
-  background wash behind it shows through the smoke.
-- On resize the field is re-seeded with puffs already scattered up the
-  screen (`emit(true)`), so the hero opens full of smoke rather than
-  filling in from the bottom.
-- The pointer disturbs it: within `POINTER_RADIUS` puffs are shoved outward
-  and billow, like waving a hand through smoke. This is the interactive
-  hook of the scene — keep it if the visuals change.
-- Scroll only feeds cheap derived values (Framer Motion `useScroll` +
-  damped `useSpring`): canvas `scale`/`opacity` and a stronger updraft.
-  GPU-accelerated, and the animation itself never reads scroll.
-- Respects `prefers-reduced-motion`: advances the simulation a fixed number
-  of steps and paints one static composition instead of animating.
-- A CSS `mask-image` gradient thins the smoke on the left so the copy stays
-  the most legible thing on screen.
-- Content (name/title/tagline/avatar) fades out over the track via the same
-  damped scroll value, before the next section takes over.
+Framer Motion is used only for a short pinned fade-out: a `h-[150svh]` track
+with a `sticky top-0 h-[100svh]` inner container, with content opacity/`y`
+driven by a damped `useSpring` over `useScroll`. Keep the track short — the
+page should get going quickly.
 
-If a similar effect is needed elsewhere, extract the canvas logic into its
-own hook/component rather than duplicating `HeroScene`. Don't reintroduce a
-`<video>`-based approach for scroll-driven hero content unless the
-keyframe-density problem is solved first (re-encoding with `-g 1` or
-switching to an image-sequence-on-canvas technique).
+**The portrait is never filtered, masked, or abstracted.** The photo renders
+through `next/image` inside a round frame; the animation surrounds it. On
+mobile it stacks *below* the intro copy (natural source order), and becomes
+the right-hand column at `md`.
+
+History, so these aren't re-litigated: a scroll-scrubbed `<video>` (choppy —
+browsers can't seek frame-accurately without dense keyframing), an
+isometric block build, a particle/flow field, a canvas smoke simulation, a
+WebGL mesh-gradient shader, and a halftone dot-matrix portrait have all been
+tried and rejected — they either competed with the copy or, in the halftone's
+case, made the face unrecognisable. Don't reintroduce a canvas/WebGL hero
+effect without a strong, specific reason.
 
 ## When adding a new section
 

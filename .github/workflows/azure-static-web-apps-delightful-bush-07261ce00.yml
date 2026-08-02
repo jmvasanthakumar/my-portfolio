@@ -9,6 +9,12 @@ on:
     branches:
       - master
 
+# Only one deploy per branch/PR at a time: pushing again supersedes the run
+# already in flight instead of queueing a second one.
+concurrency:
+  group: swa-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
@@ -45,6 +51,36 @@ jobs:
           output_location: "" # Built app content directory - optional
           github_id_token: ${{ steps.idtoken.outputs.result }}
           ###### End of Repository/Build Configurations ######
+
+  # Run history (and the logs attached to each run) is what accumulates storage
+  # over time for this repo — the deploy itself uploads no artifacts. After a
+  # successful deploy, keep the newest N completed runs of this workflow and
+  # delete the rest.
+  cleanup_old_runs:
+    if: github.event_name == 'push'
+    needs: build_and_deploy_job
+    runs-on: ubuntu-latest
+    name: Prune Old Workflow Runs
+    permissions:
+      actions: write
+    steps:
+      - name: Delete all but the newest runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          WORKFLOW_FILE: azure-static-web-apps-delightful-bush-07261ce00.yml
+          KEEP: "10"
+        run: |
+          # Only completed runs are considered, so the run executing this step
+          # (and any queued one) is never a deletion candidate.
+          gh run list \
+            --workflow "$WORKFLOW_FILE" \
+            --limit 100 \
+            --json databaseId,status,createdAt \
+            --jq '[.[] | select(.status == "completed")]
+                  | sort_by(.createdAt) | reverse | .[].databaseId' \
+            | tail -n "+$((KEEP + 1))" \
+            | xargs -r -I {} gh run delete {}
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
