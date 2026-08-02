@@ -11,7 +11,7 @@ export default async function Skills() {
   const skills = await getSkills();
 
   return (
-    <section id="skills" className="bg-background-alt py-24 sm:py-32">
+    <section id="skills" className="bg-background-alt py-16 sm:py-24 lg:py-32">
       <div className="section-container">
         <Reveal>
           <p className="font-mono text-sm text-accent-ink">03. Toolkit</p>
@@ -20,10 +20,10 @@ export default async function Skills() {
           </h2>
         </Reveal>
 
-        <div className="mt-14 grid gap-8 sm:grid-cols-3">
+        <div className="mt-10 grid gap-5 sm:mt-14 sm:grid-cols-3 sm:gap-8">
           {GROUPS.map((group, i) => (
             <Reveal key={group.key} delay={i * 0.1}>
-              <div className="glass-card h-full rounded-2xl p-6">
+              <div className="glass-card h-full rounded-2xl p-5 sm:p-6">
                 <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-accent-ink">
                   {group.label}
                 </h3>

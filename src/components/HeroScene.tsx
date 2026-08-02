@@ -100,9 +100,11 @@ void main() {
   float glow = exp(-dot(pointerDelta, pointerDelta) * 9.0);
   color += AMBER * glow * 0.16;
 
-  // Keep the left column close to the page background so the hero copy always
-  // sits on near-flat paper, and let the gradient build toward the right.
-  float reveal = smoothstep(0.02, 0.62, uv.x);
+  // On landscape, keep the left column close to the page background so the
+  // hero copy sits on near-flat paper and the gradient builds toward the
+  // right. Portrait phones have no side column to spare, so the gradient
+  // covers the full screen there and the copy carries its own backdrop.
+  float reveal = mix(smoothstep(0.02, 0.62, uv.x), 0.78, step(aspect, 1.0));
   // Settle back toward the background as the scroll track runs out.
   reveal *= 1.0 - uProgress * 0.55;
   color = mix(BASE, color, reveal);
@@ -275,8 +277,10 @@ export default function HeroScene({
   }, [reducedMotion]);
 
   return (
-    <div ref={trackRef} className="relative h-[150vh]">
-      <div className="sticky top-0 flex h-screen items-center overflow-hidden">
+    // svh, not vh: on phones `100vh` is the viewport with the browser chrome
+    // hidden, so a vh-sized hero gets its bottom cropped by the toolbar.
+    <div ref={trackRef} className="relative h-[150svh]">
+      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-20"
@@ -295,45 +299,47 @@ export default function HeroScene({
 
         <motion.div
           style={{ opacity: contentOpacity, y: contentY }}
-          className="section-container relative z-10 grid items-center gap-12 pt-24 md:grid-cols-[1.3fr_0.7fr]"
+          className="section-container relative z-10 grid items-center gap-8 pt-20 sm:gap-12 sm:pt-24 md:grid-cols-[1.3fr_0.7fr]"
         >
-          <div className="relative rounded-2xl bg-background/70 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none">
-            <p className="mb-4 font-mono text-sm text-accent-ink">Hi, I&apos;m</p>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
+          <div className="relative order-2 rounded-2xl bg-background/70 p-4 backdrop-blur-sm sm:p-0 md:order-1 md:bg-transparent md:backdrop-blur-none">
+            <p className="mb-3 font-mono text-sm text-accent-ink sm:mb-4">
+              Hi, I&apos;m
+            </p>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
               {name}
             </h1>
-            <h2 className="mt-3 text-xl font-medium text-muted sm:text-2xl">
+            <h2 className="mt-2 text-lg font-medium text-muted sm:mt-3 sm:text-2xl">
               {title} · {yearsOfExperience}+ years
             </h2>
-            <p className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted sm:mt-6 sm:text-lg">
               {tagline}
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-4">
+            <div className="mt-6 flex flex-wrap gap-3 sm:mt-8 sm:gap-4">
               <a
                 href="#contact"
-                className="rounded-full bg-accent px-6 py-3 text-sm font-medium text-accent-contrast transition-transform hover:scale-105"
+                className="rounded-full bg-accent px-5 py-3 text-sm font-medium text-accent-contrast transition-transform hover:scale-105 sm:px-6"
               >
                 Get in touch
               </a>
               <a
                 href="#projects"
-                className="rounded-full border border-border px-6 py-3 text-sm font-medium transition-colors hover:border-accent hover:text-accent-ink"
+                className="rounded-full border border-border px-5 py-3 text-sm font-medium transition-colors hover:border-accent hover:text-accent-ink sm:px-6"
               >
                 View projects
               </a>
             </div>
           </div>
 
-          <div className="justify-self-center">
-            <div className="relative h-48 w-48 sm:h-64 sm:w-64">
+          <div className="order-1 justify-self-center md:order-2">
+            <div className="relative h-32 w-32 sm:h-48 sm:w-48 lg:h-64 lg:w-64">
               <div className="absolute inset-0 rounded-full bg-gradient-to-br from-accent to-accent-2 opacity-45 blur-2xl" />
               <div className="glass-card relative h-full w-full overflow-hidden rounded-full">
                 <Image
                   src={avatarUrl}
                   alt={name}
                   fill
-                  sizes="256px"
+                  sizes="(max-width: 640px) 128px, (max-width: 1024px) 192px, 256px"
                   className="object-cover"
                   priority
                 />
@@ -344,7 +350,7 @@ export default function HeroScene({
 
         <motion.div
           style={{ opacity: contentOpacity }}
-          className="absolute bottom-10 left-1/2 z-10 -translate-x-1/2 text-xs text-muted"
+          className="absolute bottom-5 left-1/2 z-10 -translate-x-1/2 text-xs text-muted sm:bottom-10"
         >
           scroll ↓
         </motion.div>

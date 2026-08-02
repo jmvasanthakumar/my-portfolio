@@ -50,7 +50,8 @@ export default function Nav({ name }: { name: string }) {
 
         <button
           aria-label="Toggle menu"
-          className="md:hidden flex flex-col gap-1.5 p-2"
+          aria-expanded={open}
+          className="-mr-2 flex h-11 w-11 flex-col items-center justify-center gap-1.5 md:hidden"
           onClick={() => setOpen((o) => !o)}
         >
           <span className="block h-0.5 w-5 bg-foreground" />
@@ -59,13 +60,15 @@ export default function Nav({ name }: { name: string }) {
       </nav>
 
       {open && (
-        <ul className="md:hidden section-container flex flex-col gap-4 pb-6 text-sm text-muted">
+        // The header is transparent until scrolled, so the open menu needs its
+        // own surface or it sits unreadable on top of the hero.
+        <ul className="section-container flex flex-col gap-1 border-b border-border bg-background/95 pb-4 text-sm text-muted backdrop-blur md:hidden">
           {LINKS.map((link) => (
             <li key={link.href}>
               <a
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="transition-colors hover:text-foreground"
+                className="block py-3 transition-colors hover:text-foreground"
               >
                 {link.label}
               </a>

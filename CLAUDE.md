@@ -46,6 +46,26 @@ non-resume parts.
 11. **Section anchors** (`#experience`, `#projects`, `#skills`, `#updates`,
     `#education`, `#contact`) must stay in sync between each component's
     `id` and `Nav.tsx`'s `LINKS` array.
+12. **Mobile responsiveness is non-negotiable.** Every section must work on a
+    360×640 phone viewport — no change ships without checking it there.
+    Concretely:
+    - **Mobile-first classes.** Base utilities target the phone; `sm:`/`md:`/
+      `lg:` add back the desktop treatment. Never write a desktop-only value
+      with no base fallback.
+    - **No horizontal scroll, ever.** `document.documentElement.scrollWidth`
+      must equal the viewport width at 360px. Long strings get `break-all` /
+      `break-words`; wide blocks (tables, code, diagrams) scroll inside their
+      own `overflow-x-auto` container.
+    - **Use `svh`, not `vh`, for full-height layout** (`h-[100svh]`,
+      `h-[150svh]`). On phones `100vh` is the viewport with the browser
+      toolbar hidden, so `vh` layouts get their bottom cropped.
+    - **Full-height content must fit the small viewport.** The hero is the
+      usual offender — shrink type, avatar, and spacing at base size so
+      nothing is clipped at 640px tall.
+    - **Tap targets ≥ 44px**, and anything that overlays the page (the mobile
+      nav menu) needs its own opaque surface.
+    - **Verify, don't assume**: resize the preview to 360×640, then re-check
+      `scrollWidth` and that key sections aren't clipped.
 
 ## Hero: procedural canvas scene (no video/image assets)
 
@@ -111,3 +131,5 @@ switching to an image-sequence-on-canvas technique).
 - Preview via the dev server (`npm run dev`, or the Claude Browser
   `portfolio-dev` launch config in `.claude/launch.json`) and check rendered
   content, not just that it compiles.
+- Check the preview at **360×640 as well as desktop** — rule 12 is part of
+  "done", not a follow-up.

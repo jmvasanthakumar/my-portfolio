@@ -6,7 +6,10 @@ export default async function Experience() {
   const experience = await getExperience();
 
   return (
-    <section id="experience" className="bg-background-alt py-24 sm:py-32">
+    <section
+      id="experience"
+      className="bg-background-alt py-16 sm:py-24 lg:py-32"
+    >
       <div className="section-container">
         <Reveal>
           <p className="font-mono text-sm text-accent-ink">01. Journey</p>
@@ -15,12 +18,12 @@ export default async function Experience() {
           </h2>
         </Reveal>
 
-        <div className="relative mt-14 space-y-10 border-l border-border pl-8 sm:pl-10">
+        <div className="relative mt-10 space-y-8 border-l border-border pl-6 sm:mt-14 sm:space-y-10 sm:pl-10">
           {experience.map((role, i) => (
             <Reveal key={role.id} delay={i * 0.08}>
               <div className="relative">
                 <span
-                  className={`absolute -left-[calc(2rem+5px)] top-1.5 h-3 w-3 rounded-full sm:-left-[calc(2.5rem+5px)] ${
+                  className={`absolute -left-[calc(1.5rem+5px)] top-1.5 h-3 w-3 rounded-full sm:-left-[calc(2.5rem+5px)] ${
                     role.current ? "bg-accent" : "bg-border"
                   }`}
                 />

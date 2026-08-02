@@ -6,7 +6,7 @@ export default async function Updates() {
   const updates = await getUpdates();
 
   return (
-    <section id="updates" className="py-24 sm:py-32">
+    <section id="updates" className="py-16 sm:py-24 lg:py-32">
       <div className="section-container">
         <Reveal>
           <p className="font-mono text-sm text-accent-ink">04. Now</p>
@@ -19,10 +19,10 @@ export default async function Updates() {
           </p>
         </Reveal>
 
-        <div className="mt-14 space-y-4">
+        <div className="mt-10 space-y-4 sm:mt-14">
           {updates.map((update, i) => (
             <Reveal key={update.id} delay={i * 0.06}>
-              <div className="glass-card flex flex-col gap-2 rounded-2xl p-6 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+              <div className="glass-card flex flex-col gap-2 rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-6">
                 <div>
                   <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent-ink">
                     {update.tag}

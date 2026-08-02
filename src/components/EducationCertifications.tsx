@@ -9,8 +9,11 @@ export default async function EducationCertifications() {
   ]);
 
   return (
-    <section id="education" className="bg-background-alt py-24 sm:py-32">
-      <div className="section-container grid gap-12 md:grid-cols-2">
+    <section
+      id="education"
+      className="bg-background-alt py-16 sm:py-24 lg:py-32"
+    >
+      <div className="section-container grid gap-10 md:grid-cols-2 md:gap-12">
         <div>
           <Reveal>
             <p className="font-mono text-sm text-accent-ink">05. Education</p>
@@ -22,7 +25,7 @@ export default async function EducationCertifications() {
           <div className="mt-8 space-y-4">
             {education.map((edu, i) => (
               <Reveal key={edu.id} delay={i * 0.08}>
-                <div className="glass-card rounded-2xl p-6">
+                <div className="glass-card rounded-2xl p-5 sm:p-6">
                   <h3 className="font-semibold">{edu.degree}</h3>
                   <p className="mt-1 text-sm text-muted">{edu.institution}</p>
                   <p className="mt-1 font-mono text-xs text-muted">
@@ -58,7 +61,7 @@ export default async function EducationCertifications() {
           <div className="mt-8 space-y-4">
             {certifications.recognitions.map((rec, i) => (
               <Reveal key={rec.id} delay={0.15 + i * 0.08}>
-                <div className="glass-card rounded-2xl p-6">
+                <div className="glass-card rounded-2xl p-5 sm:p-6">
                   <p>{rec.title}</p>
                   <p className="mt-2 font-mono text-xs text-muted">
                     {formatFullDate(rec.date + "-01")}

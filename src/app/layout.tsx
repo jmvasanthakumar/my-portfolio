@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { getProfile } from "@/services/portfolioService";
 import "./globals.css";
@@ -12,6 +12,14 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Let the page paint under the notch/home indicator on phones; the layout
+  // uses svh units so nothing important lands there.
+  viewportFit: "cover",
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const profile = await getProfile();

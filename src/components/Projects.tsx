@@ -5,7 +5,7 @@ export default async function Projects() {
   const projects = await getProjects();
 
   return (
-    <section id="projects" className="py-24 sm:py-32">
+    <section id="projects" className="py-16 sm:py-24 lg:py-32">
       <div className="section-container">
         <Reveal>
           <p className="font-mono text-sm text-accent-ink">02. Work</p>
@@ -14,10 +14,10 @@ export default async function Projects() {
           </h2>
         </Reveal>
 
-        <div className="mt-14 grid gap-6 sm:grid-cols-2">
+        <div className="mt-10 grid gap-5 sm:mt-14 sm:grid-cols-2 sm:gap-6">
           {projects.map((project, i) => (
             <Reveal key={project.id} delay={i * 0.06}>
-              <article className="glass-card group h-full rounded-2xl p-6 transition-colors hover:border-accent/40 sm:p-8">
+              <article className="glass-card group h-full rounded-2xl p-5 transition-colors hover:border-accent/40 sm:p-8">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                   <h3 className="text-lg font-semibold sm:text-xl">
                     {project.name}
