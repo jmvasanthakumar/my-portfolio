@@ -19,6 +19,7 @@ export interface Profile {
   location: string;
   email: string;
   linkedin: string;
+  github: string;
   instagram: string;
   yearsOfExperience: number;
   /**

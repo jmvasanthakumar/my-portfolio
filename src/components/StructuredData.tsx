@@ -42,7 +42,9 @@ export default async function StructuredData() {
       "@type": "PostalAddress",
       addressCountry: profile.location,
     },
-    sameAs: [profile.linkedin, profile.instagram].filter(Boolean),
+    sameAs: [profile.linkedin, profile.github, profile.instagram].filter(
+      Boolean
+    ),
     knowsAbout: [
       ...skills.technical,
       ...skills.functional,

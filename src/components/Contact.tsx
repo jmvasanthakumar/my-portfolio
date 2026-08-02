@@ -1,6 +1,6 @@
 import { getProfile } from "@/services/portfolioService";
 import Reveal from "./Reveal";
-import { InstagramIcon, LinkedInIcon } from "./icons";
+import { GitHubIcon, InstagramIcon, LinkedInIcon } from "./icons";
 
 export default async function Contact() {
   const profile = await getProfile();
@@ -39,6 +39,16 @@ export default async function Contact() {
                 className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-accent hover:text-accent-ink"
               >
                 <LinkedInIcon className="h-5 w-5" />
+              </a>
+              <a
+                href={profile.github}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GitHub"
+                title="GitHub"
+                className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-accent hover:text-accent-ink"
+              >
+                <GitHubIcon className="h-5 w-5" />
               </a>
               <a
                 href={profile.instagram}
