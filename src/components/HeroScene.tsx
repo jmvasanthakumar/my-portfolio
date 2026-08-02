@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import Image from "next/image";
 
@@ -10,6 +10,37 @@ interface HeroSceneProps {
   tagline: string;
   yearsOfExperience: number;
   avatarUrl: string;
+  avatarHdUrl: string;
+}
+
+/**
+ * Whether it's worth pulling the full-resolution portrait. The compressed
+ * copy is what ships by default; the original is over a megabyte, so it's
+ * only fetched when the connection looks fast and the user hasn't asked to
+ * save data. Browsers without the Network Information API (Safari, Firefox)
+ * report nothing — those get the upgrade, since the fetch happens after load
+ * and never blocks anything.
+ */
+function connectionLooksFast() {
+  const connection = (
+    navigator as Navigator & {
+      connection?: {
+        saveData?: boolean;
+        effectiveType?: string;
+        downlink?: number;
+      };
+    }
+  ).connection;
+
+  if (!connection) return true;
+  if (connection.saveData) return false;
+  if (connection.effectiveType && connection.effectiveType !== "4g") {
+    return false;
+  }
+  if (typeof connection.downlink === "number" && connection.downlink < 1.5) {
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -32,8 +63,12 @@ export default function HeroScene({
   tagline,
   yearsOfExperience,
   avatarUrl,
+  avatarHdUrl,
 }: HeroSceneProps) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const portraitRef = useRef<HTMLDivElement>(null);
+  const [wantHd, setWantHd] = useState(false);
+  const [hdVisible, setHdVisible] = useState(false);
 
   const { scrollYProgress } = useScroll({
     target: trackRef,
@@ -48,6 +83,37 @@ export default function HeroScene({
 
   const contentOpacity = useTransform(smoothProgress, [0, 0.55, 1], [1, 1, 0]);
   const contentY = useTransform(smoothProgress, [0, 1], [0, -60]);
+
+  // Progressive upgrade: once the page has finished loading, and only if the
+  // connection looks fast and the frame is big enough to show the detail,
+  // request the full-resolution original. It layers over the default copy and
+  // fades in when it has decoded, so a slow or stalled fetch is never visible.
+  useEffect(() => {
+    if (!avatarHdUrl) return;
+
+    let cancelled = false;
+
+    const upgrade = () => {
+      if (cancelled) return;
+      const width = portraitRef.current?.getBoundingClientRect().width ?? 0;
+      // Phone-sized portraits are already covered by the default copy; only
+      // spend the extra bytes when the frame is big enough to show them.
+      const needed = width * (window.devicePixelRatio || 1);
+      if (needed < 480 || !connectionLooksFast()) return;
+      setWantHd(true);
+    };
+
+    if (document.readyState === "complete") {
+      upgrade();
+    } else {
+      window.addEventListener("load", upgrade, { once: true });
+    }
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("load", upgrade);
+    };
+  }, [avatarHdUrl]);
 
   return (
     // svh, not vh: on phones `100vh` is the viewport with the browser chrome
@@ -94,7 +160,10 @@ export default function HeroScene({
               exactly the mobile stacking we want; on md+ it becomes the
               right-hand column. */}
           <div className="hero-float justify-self-center">
-            <div className="relative h-44 w-44 sm:h-56 sm:w-56 lg:h-72 lg:w-72">
+            <div
+              ref={portraitRef}
+              className="relative h-44 w-44 sm:h-56 sm:w-56 lg:h-72 lg:w-72"
+            >
               <div
                 aria-hidden
                 className="absolute -inset-6 rounded-full bg-gradient-to-br from-accent to-accent-2 opacity-30 blur-2xl"
@@ -117,6 +186,24 @@ export default function HeroScene({
                   className="object-cover object-[50%_35%]"
                   priority
                 />
+                {wantHd && (
+                  // Layered on top of the default copy, not swapped for it, so
+                  // there's no gap while it loads. `sizes` is deliberately
+                  // larger than the frame: it makes the optimizer hand back a
+                  // ~1080px resample of the original instead of the browser
+                  // squeezing 2500px down on its own (which speckles it).
+                  <Image
+                    src={avatarHdUrl}
+                    alt=""
+                    aria-hidden
+                    fill
+                    sizes="900px"
+                    onLoad={() => setHdVisible(true)}
+                    className={`object-cover object-[50%_35%] transition-opacity duration-700 ${
+                      hdVisible ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                )}
               </div>
             </div>
           </div>

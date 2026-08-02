@@ -12,6 +12,7 @@ export default async function Hero() {
         tagline={profile.tagline}
         yearsOfExperience={profile.yearsOfExperience}
         avatarUrl={profile.avatarUrl}
+        avatarHdUrl={profile.avatarHdUrl}
       />
     </section>
   );

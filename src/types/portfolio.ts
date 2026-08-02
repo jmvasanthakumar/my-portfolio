@@ -7,8 +7,19 @@ export interface Profile {
   linkedin: string;
   instagram: string;
   yearsOfExperience: number;
-  /** Personal photo — a blob/CDN URL, swappable without touching components. */
+  /**
+   * Personal photo, already compressed and served from `/public` — this is
+   * what every visitor loads first.
+   */
   avatarUrl: string;
+  /**
+   * Full-resolution original, served from blob storage (never copied into
+   * the repo). Layered over `avatarUrl` after load, and only on a fast
+   * connection with a large enough frame — see `HeroScene`. It must go
+   * through `next/image` so the optimizer resamples it: letting the browser
+   * squeeze the multi-megapixel original down in one step speckles it.
+   */
+  avatarHdUrl: string;
   resumeUrl: string;
 }
 
