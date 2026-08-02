@@ -8,12 +8,14 @@ import Updates from "@/components/Updates";
 import EducationCertifications from "@/components/EducationCertifications";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
+import StructuredData from "@/components/StructuredData";
 
 export default async function Home() {
   const profile = await getProfile();
 
   return (
     <>
+      <StructuredData />
       <Nav name={profile.name} />
       <main>
         <Hero />

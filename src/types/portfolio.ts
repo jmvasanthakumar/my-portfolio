@@ -1,6 +1,12 @@
 export interface Profile {
   name: string;
   title: string;
+  /**
+   * Canonical origin of the deployed site, no trailing slash. Everything
+   * SEO-facing (canonical URL, sitemap, robots, OG tags) derives from this —
+   * change it here and nowhere else.
+   */
+  siteUrl: string;
   tagline: string;
   location: string;
   email: string;
