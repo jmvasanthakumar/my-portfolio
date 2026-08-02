@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-const LINKS = [
+// The single list of section anchors. Exported because the hero's metro line
+// (HeroMetroLine) draws a stop per section — one list, so the two can't drift
+// out of sync with each other or with the section ids.
+export const LINKS = [
   { href: "#experience", label: "Experience" },
   { href: "#projects", label: "Projects" },
   { href: "#skills", label: "Skills" },

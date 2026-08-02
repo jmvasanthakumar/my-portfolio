@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import Image from "next/image";
 
-import HeroMetro from "./HeroMetro";
+import HeroMetroLine from "./HeroMetroLine";
 
 interface HeroSceneProps {
   name: string;
@@ -46,11 +46,11 @@ function connectionLooksFast() {
 }
 
 /**
- * The hero. Motion here is deliberately restrained and CSS-driven: a metro-map
- * backdrop with trains gliding along its routes (see HeroMetro) over a soft
- * aurora wash, and a rotating gradient ring plus a gentle float on the
- * portrait frame. The photo itself is never filtered, masked or abstracted —
- * it reads as a clean, sharp portrait at every size.
+ * The hero. Motion here is deliberately restrained and CSS-driven: a slow
+ * aurora drift on the backdrop, a metro line along the bottom whose stops are
+ * the page's sections (HeroMetroLine), and a rotating gradient ring plus a
+ * gentle float on the portrait frame. The photo itself is never filtered,
+ * masked or abstracted — it reads as a clean, sharp portrait at every size.
  *
  * Earlier iterations put a canvas/WebGL effect here (particles, smoke, a
  * shader mesh gradient, a halftone portrait). They were dropped: they either
@@ -124,7 +124,6 @@ export default function HeroScene({
     <div ref={trackRef} className="relative h-[150svh]">
       <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
         <div aria-hidden className="hero-aurora pointer-events-none absolute inset-0 -z-10" />
-        <HeroMetro />
 
         <motion.div
           style={{ opacity: contentOpacity, y: contentY }}
@@ -213,9 +212,24 @@ export default function HeroScene({
           </div>
         </motion.div>
 
+        {/* The line sits under the hero content and above the scroll hint; it
+            fades out on the same scroll progress as everything else.
+
+            Shown from md up — the same breakpoint at which the nav switches
+            from the hamburger to inline links, and at which the portrait moves
+            into its own column. Below it the portrait stacks under the copy
+            and fills the bottom of the hero, leaving nowhere for the line to
+            go; those sizes reach the sections through the nav menu. */}
         <motion.div
           style={{ opacity: contentOpacity }}
-          className="absolute bottom-5 left-1/2 z-10 -translate-x-1/2 text-xs text-muted sm:bottom-10"
+          className="section-container pointer-events-none absolute inset-x-0 bottom-16 z-10 hidden md:block"
+        >
+          <HeroMetroLine />
+        </motion.div>
+
+        <motion.div
+          style={{ opacity: contentOpacity }}
+          className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 text-xs text-muted sm:bottom-8"
         >
           scroll ↓
         </motion.div>

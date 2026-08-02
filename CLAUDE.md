@@ -67,10 +67,10 @@ non-resume parts.
     - **Verify, don't assume**: resize the preview to 360×640, then re-check
       `scrollWidth` and that key sections aren't clipped.
 
-## Hero: restrained, CSS-driven motion (no video, no canvas)
+## Hero: restrained motion (no video, no canvas)
 
-`Hero.tsx` renders `HeroScene.tsx`. The hero's motion is deliberately quiet
-and lives entirely in CSS (`globals.css`):
+`Hero.tsx` renders `HeroScene.tsx`. The hero's ambient motion is deliberately
+quiet and lives entirely in CSS (`globals.css`):
 
 - `.hero-aurora` — the backdrop: three soft radial colour fields that drift
   slowly against each other (`hero-aurora-drift`).
@@ -80,10 +80,28 @@ and lives entirely in CSS (`globals.css`):
   (`hero-float-bob`).
 - All three are disabled under `prefers-reduced-motion: reduce`.
 
-Framer Motion is used only for a short pinned fade-out: a `h-[150svh]` track
-with a `sticky top-0 h-[100svh]` inner container, with content opacity/`y`
-driven by a damped `useSpring` over `useScroll`. Keep the track short — the
-page should get going quickly.
+Framer Motion drives two things, and only these two:
+
+1. A short pinned fade-out: a `h-[150svh]` track with a `sticky top-0
+   h-[100svh]` inner container, with content opacity/`y` driven by a damped
+   `useSpring` over `useScroll`. Keep the track short — the page should get
+   going quickly.
+2. `HeroMetroLine.tsx` — the metro line across the bottom of the hero, one
+   stop per section. A train patrols it (`useAnimationFrame`, a triangle wave
+   between the first and last stop) and pulls in at whichever stop is hovered
+   or focused, with a `useSpring` doing the travel so a change of destination
+   reads as slowing and arriving rather than teleporting. The track lights up
+   behind the train and the stop it arrives at swells; the stop labels are the
+   only text on the line — deliberately no tooltip or destination board. Under
+   `prefers-reduced-motion` the patrol and the spring are both dropped — the
+   train only moves, instantly, to a stop the visitor picks.
+
+   The stops come from `Nav.tsx`'s exported `LINKS`, so the line, the nav and
+   the section ids can't drift apart — add a section there and it appears
+   here. Positioning is percentage-based off `(i + 0.5) / n`, and the whole
+   line is `hidden md:block`: below `md` the portrait stacks under the copy
+   and fills the bottom of the hero, leaving nowhere for it to go (that's the
+   same breakpoint where the nav switches to the hamburger).
 
 **The portrait is never filtered, masked, or abstracted.** The photo renders
 through `next/image` inside a round frame; the animation surrounds it. On
@@ -96,7 +114,10 @@ isometric block build, a particle/flow field, a canvas smoke simulation, a
 WebGL mesh-gradient shader, and a halftone dot-matrix portrait have all been
 tried and rejected — they either competed with the copy or, in the halftone's
 case, made the face unrecognisable. Don't reintroduce a canvas/WebGL hero
-effect without a strong, specific reason.
+effect without a strong, specific reason. A full SVG metro-map *backdrop*
+(routes and interchanges drifting behind the copy) was also tried and dropped
+— the interactive line is the part that earns its place; the map behind it was
+just noise.
 
 ## SEO / indexing
 
