@@ -62,10 +62,10 @@ const mask = `<svg xmlns="http://www.w3.org/2000/svg" width="336" height="336"><
       { input: photo, left: 792, top: 147 },
       { input: Buffer.from(ring), left: 780, top: 135 },
     ])
-    .png({ compressionLevel: 9 })
+    .jpeg({ quality: 88, mozjpeg: true })
     .toBuffer();
 
-  fs.writeFileSync('src/app/opengraph-image.png', out);
-  fs.writeFileSync('src/app/twitter-image.png', out);
+  fs.writeFileSync('src/app/opengraph-image.jpg', out);
+  fs.writeFileSync('src/app/twitter-image.jpg', out);
   console.log('og written', (out.length / 1024).toFixed(0) + 'KB');
 })();
